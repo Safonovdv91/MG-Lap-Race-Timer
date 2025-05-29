@@ -142,9 +142,9 @@ const char* htmlPage = R"rawliteral(
     
     <div class="controls">
       <select id="modeSelect" onchange="changeMode()">
-        <option value="0">Speedometer</option>
+        <option value="0">Speedometer (Требуется 2 датчика)</option>
         <option value="1">Lap Timer</option>
-        <option value="2">Race Timer</option>
+        <option value="2">Race Timer (Требуется 2 датчика)</option>
       </select>
       
       <div id="distanceControl" class="distance-control">
