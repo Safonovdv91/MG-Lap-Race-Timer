@@ -23,7 +23,7 @@ function updateDisplay() {
         historyData = data.lapHistory;
       }
 
-      // Update history table
+      // Обновление таблицы истории
       const tableBody = document.getElementById('historyBody');
       tableBody.innerHTML = '';
 
@@ -35,12 +35,14 @@ function updateDisplay() {
           indexCell.textContent = i + 1;
           row.appendChild(indexCell);
 
+          // Значение
           const valueCell = document.createElement('td');
           valueCell.textContent = currentMode == 0 ?
             historyData[i].value.toFixed(2) + ' km/h' :
             historyData[i].value.toFixed(3) + ' s';
           row.appendChild(valueCell);
 
+          // Время
           const timeCell = document.createElement('td');
           const date = new Date(historyData[i].time);
           timeCell.textContent = date.toLocaleTimeString();

@@ -29,14 +29,14 @@ void handleData() {
   json += "\"distance\":" + String(distance) + ",";
   
   json += "\"speedHistory\":[";
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < min(historyIndex, HISTORY_SIZE); i++) { // Используем актуальное количество записей
     if (i > 0) json += ",";
     json += "{\"value\":" + String(speedHistory[i].value) + ",\"time\":" + String(speedHistory[i].timestamp) + "}";
   }
   json += "],";
   
   json += "\"lapHistory\":[";
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < min(historyIndex, HISTORY_SIZE); i++) {
     if (i > 0) json += ",";
     json += "{\"value\":" + String(lapHistory[i].value) + ",\"time\":" + String(lapHistory[i].timestamp) + "}";
   }

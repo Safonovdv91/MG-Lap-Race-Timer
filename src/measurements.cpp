@@ -90,6 +90,16 @@ void processMeasurements() {
 }
 
 void addToHistory(Measurement history[], float value) {
-  history[historyIndex % HISTORY_SIZE] = {value, millis()};
-  historyIndex++;
+  // Смещаем все существующие записи вниз
+  for (int i = HISTORY_SIZE - 1; i > 0; i--) {
+    history[i] = history[i - 1];
+  }
+  
+  // Добавляем новое значение в начало массива
+  history[0] = {value, millis()};
+  
+  // Обновляем индекс (если используется где-то еще)
+  if (historyIndex < HISTORY_SIZE) {
+    historyIndex++;
+  }
 }
