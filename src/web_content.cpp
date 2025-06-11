@@ -8,6 +8,7 @@ String getHTMLContent() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#FF4F00">
   <title>ESP32 Speedometer</title>
   <link rel="stylesheet" href="/style.css">
 </head>

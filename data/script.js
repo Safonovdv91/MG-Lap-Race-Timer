@@ -9,7 +9,6 @@ function updateDisplay() {
       document.getElementById('modeSelect').value = currentMode;
       document.getElementById('distanceInput').value = data.distance;
 
-      // Update main display
       // Обновление главного дисплея
       const valueDisplay = document.getElementById('valueDisplay');
       if (data.measurementInProgress) { // Добавим этот флаг в JSON
