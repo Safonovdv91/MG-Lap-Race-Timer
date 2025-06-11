@@ -17,11 +17,15 @@ struct Measurement {
 extern Measurement speedHistory[HISTORY_SIZE];
 extern Measurement lapHistory[HISTORY_SIZE];
 extern int historyIndex;
+
 extern volatile unsigned long startTime;
 extern volatile unsigned long endTime;
+
 extern volatile bool sensor1Triggered;
 extern volatile bool sensor2Triggered;
 extern volatile bool measurementReady;
+extern volatile bool measurementInProgress;
+
 extern volatile float currentValue;
 
 void addToHistory(Measurement history[], float value);

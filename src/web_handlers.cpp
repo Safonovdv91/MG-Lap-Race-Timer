@@ -27,9 +27,11 @@ void handleData() {
   json += "\"mode\":" + String(currentMode) + ",";
   json += "\"currentValue\":" + String(currentValue) + ",";
   json += "\"distance\":" + String(distance) + ",";
+  json += "\"measurementInProgress\":" + String(sensor1Triggered ? "true" : "false") + ",";
+  json += "\"historyIndex\":" + String(historyIndex) + ",";
   
   json += "\"speedHistory\":[";
-  for (int i = 0; i < min(historyIndex, HISTORY_SIZE); i++) { // Используем актуальное количество записей
+  for (int i = 0; i < min(historyIndex, HISTORY_SIZE); i++) {
     if (i > 0) json += ",";
     json += "{\"value\":" + String(speedHistory[i].value) + ",\"time\":" + String(speedHistory[i].timestamp) + "}";
   }

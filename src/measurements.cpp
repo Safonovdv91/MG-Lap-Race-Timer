@@ -11,11 +11,13 @@ int historyIndex = 0;
 
 volatile unsigned long startTime = 0;
 volatile unsigned long endTime = 0;
+
 volatile bool sensor1Triggered = false;
 volatile bool sensor2Triggered = false;
 volatile bool measurementReady = false;
-volatile float currentValue = 0.0;
+volatile bool measurementInProgress = false;
 
+volatile float currentValue = 0.0;
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
   static unsigned long lastInterrupt = 0;
@@ -26,6 +28,7 @@ void IRAM_ATTR handleSensor1() {
 
   if (currentMode == SPEEDOMETER) {
     if (!sensor1Triggered && !sensor2Triggered) {
+      measurementInProgress = true;
       startTime = now;
       sensor1Triggered = true;
     }
@@ -73,6 +76,7 @@ void IRAM_ATTR handleSensor2() {
 
 void processMeasurements() {
   if (measurementReady) {
+    measurementInProgress = false;
     unsigned long duration = endTime - startTime;
     
     if (currentMode == SPEEDOMETER) {

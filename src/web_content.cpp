@@ -33,7 +33,7 @@ String getHTMLContent() {
     </div>
     
     <div class="display">
-      <div id="valueDisplay" class="main-value">0.00</div>
+      <div id="valueDisplay" class="main-value time-display">0.00</div>
       <div id="unitDisplay" class="unit">km/h</div>
     </div>
     
