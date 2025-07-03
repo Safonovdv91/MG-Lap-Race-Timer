@@ -5,6 +5,7 @@ function updateDisplay() {
   fetch('/data')
     .then(response => response.json())
     .then(data => {
+      updateSensorStatus(data.sensor1Active, data.sensor2Active);
       currentMode = data.mode;
       document.getElementById('modeSelect').value = currentMode;
       document.getElementById('distanceInput').value = data.distance;
@@ -108,6 +109,19 @@ document.querySelectorAll('.distance-control button').forEach(btn => {
     this.click();
   });
 });
+
+// Функцию для обновления статуса датчиков
+function updateSensorStatus(sensor1Active, sensor2Active) {
+  const sensor1Elem = document.getElementById('sensor1Status');
+  const sensor2Elem = document.getElementById('sensor2Status');
+  
+  sensor1Elem.textContent = 'Д1: ' + (sensor1Active ? 'АКТИВЕН' : '---');
+  sensor2Elem.textContent = 'Д2: ' + (sensor2Active ? 'АКТИВЕН' : '---');
+  
+  sensor1Elem.className = sensor1Active ? 'sensor-active' : '';
+  sensor2Elem.className = sensor2Active ? 'sensor-active' : '';
+}
+
 
 // Update every 300ms
 setInterval(updateDisplay, 300);

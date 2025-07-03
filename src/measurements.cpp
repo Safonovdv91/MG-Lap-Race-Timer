@@ -17,6 +17,13 @@ volatile bool sensor2Triggered = false;
 volatile bool measurementReady = false;
 volatile bool measurementInProgress = false;
 
+// Переменные времени срабатывания датчика
+volatile unsigned long sensor1DisplayTime = 0;
+volatile unsigned long sensor2DisplayTime = 0;
+bool sensor1Active = false;
+bool sensor2Active = false;
+
+
 volatile float currentValue = 0.0;
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
@@ -25,6 +32,10 @@ void IRAM_ATTR handleSensor1() {
   
   if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
   lastInterrupt = now;
+
+  // Обновление времени отображения
+  sensor1DisplayTime = millis();
+  sensor1Active = true;
 
   if (currentMode == SPEEDOMETER) {
     if (!sensor1Triggered && !sensor2Triggered) {
@@ -57,6 +68,10 @@ void IRAM_ATTR handleSensor2() {
   
   if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
   lastInterrupt = now;
+
+  // Обновление времени отображения сработки датчика
+  sensor2DisplayTime = millis();
+  sensor2Active = true;
 
   if (currentMode == SPEEDOMETER) {
     if (sensor1Triggered && !sensor2Triggered) {
@@ -105,5 +120,19 @@ void addToHistory(Measurement history[], float value) {
   // Обновляем индекс (если используется где-то еще)
   if (historyIndex < HISTORY_SIZE) {
     historyIndex++;
+  }
+}
+
+// Функцию для обновления состояния датчиков
+void updateSensorDisplay() {
+  unsigned long currentTime = millis();
+  
+  // Проверяем, прошла ли 1 секунда с момента срабатывания
+  if (sensor1Active && (currentTime - sensor1DisplayTime > 1000)) {
+    sensor1Active = false;
+  }
+  
+  if (sensor2Active && (currentTime - sensor2DisplayTime > 1000)) {
+    sensor2Active = false;
   }
 }

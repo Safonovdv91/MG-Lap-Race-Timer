@@ -37,6 +37,6 @@ void setup() {
 void loop() {
   server.handleClient();
   processMeasurements();
-
+  updateSensorDisplay(); // состояние датчиков
   delay(1); // Добавляем небольшую задержку
 }

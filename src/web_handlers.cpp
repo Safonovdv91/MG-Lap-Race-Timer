@@ -24,11 +24,13 @@ void handleRoot() {
 
 void handleData() {
   String json = "{";
-  json += "\"mode\":" + String(currentMode) + ",";
-  json += "\"currentValue\":" + String(currentValue) + ",";
-  json += "\"distance\":" + String(distance) + ",";
-  json += "\"measurementInProgress\":" + String(sensor1Triggered ? "true" : "false") + ",";
-  json += "\"historyIndex\":" + String(historyIndex) + ",";
+  json += "\"mode\":" + String(currentMode) + ","; // Режим работы
+  json += "\"currentValue\":" + String(currentValue) + ","; // текущее значение
+  json += "\"distance\":" + String(distance) + ","; // данные о дистанции
+  json += "\"sensor1Active\":" + String(sensor1Active ? "true" : "false") + ","; // Состояние датчика 1
+  json += "\"sensor2Active\":" + String(sensor2Active ? "true" : "false") + ","; // Состояние датчика 2
+  json += "\"measurementInProgress\":" + String(sensor1Triggered ? "true" : "false") + ","; // Идет ли измерение
+  json += "\"historyIndex\":" + String(historyIndex) + ","; // Индекс измерения
   
   json += "\"speedHistory\":[";
   for (int i = 0; i < min(historyIndex, HISTORY_SIZE); i++) {

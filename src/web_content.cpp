@@ -37,7 +37,10 @@ String getHTMLContent() {
       <div id="valueDisplay" class="main-value time-display">0.00</div>
       <div id="unitDisplay" class="unit">km/h</div>
     </div>
-    
+    <div id="sensorStatus" class="sensor-status">
+      <span id="sensor1Status">Д1: --- </span>
+      <span id="sensor2Status">Д2: --- </span>
+    </div>
     <div class="history">
       <h2>История проездов</h2>
       <table id="historyTable">
