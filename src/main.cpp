@@ -4,6 +4,9 @@
 #include "../include/measurements.h"
 #include "../include/web_handlers.h"
 #include <WiFi.h>
+#include <DNSServer.h>
+
+DNSServer dnsServer;
 
 void setup() {
   Serial.begin(115200);
@@ -19,6 +22,11 @@ void setup() {
 
   WiFi.softAP(ssid, password);
   IPAddress IP = WiFi.softAPIP();
+  // Настройка DNS для перенаправления всех запросов
+  dnsServer.start(53, "*", WiFi.softAPIP());
+  // Установка имени хоста
+  WiFi.setHostname("chrono.mg");
+
   Serial.print("AP IP address: ");
   Serial.println(IP);
 
@@ -36,7 +44,8 @@ void setup() {
 
 void loop() {
   server.handleClient();
+  dnsServer.processNextRequest(); // Обработка DNS запросов
   processMeasurements();
-
+  updateSensorDisplay(); // состояние датчиков
   delay(1); // Добавляем небольшую задержку
 }

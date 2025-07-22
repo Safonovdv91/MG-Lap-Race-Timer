@@ -11,11 +11,20 @@ int historyIndex = 0;
 
 volatile unsigned long startTime = 0;
 volatile unsigned long endTime = 0;
+
 volatile bool sensor1Triggered = false;
 volatile bool sensor2Triggered = false;
 volatile bool measurementReady = false;
-volatile float currentValue = 0.0;
+volatile bool measurementInProgress = false;
 
+// Переменные времени срабатывания датчика
+volatile unsigned long sensor1DisplayTime = 0;
+volatile unsigned long sensor2DisplayTime = 0;
+bool sensor1Active = false;
+bool sensor2Active = false;
+
+
+volatile float currentValue = 0.0;
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
   static unsigned long lastInterrupt = 0;
@@ -24,8 +33,13 @@ void IRAM_ATTR handleSensor1() {
   if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
   lastInterrupt = now;
 
+  // Обновление времени отображения
+  sensor1DisplayTime = millis();
+  sensor1Active = true;
+
   if (currentMode == SPEEDOMETER) {
     if (!sensor1Triggered && !sensor2Triggered) {
+      measurementInProgress = true;
       startTime = now;
       sensor1Triggered = true;
     }
@@ -55,6 +69,10 @@ void IRAM_ATTR handleSensor2() {
   if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
   lastInterrupt = now;
 
+  // Обновление времени отображения сработки датчика
+  sensor2DisplayTime = millis();
+  sensor2Active = true;
+
   if (currentMode == SPEEDOMETER) {
     if (sensor1Triggered && !sensor2Triggered) {
       endTime = now;
@@ -73,6 +91,7 @@ void IRAM_ATTR handleSensor2() {
 
 void processMeasurements() {
   if (measurementReady) {
+    measurementInProgress = false;
     unsigned long duration = endTime - startTime;
     
     if (currentMode == SPEEDOMETER) {
@@ -90,6 +109,30 @@ void processMeasurements() {
 }
 
 void addToHistory(Measurement history[], float value) {
-  history[historyIndex % HISTORY_SIZE] = {value, millis()};
-  historyIndex++;
+  // Смещаем все существующие записи вниз
+  for (int i = HISTORY_SIZE - 1; i > 0; i--) {
+    history[i] = history[i - 1];
+  }
+  
+  // Добавляем новое значение в начало массива
+  history[0] = {value, millis()};
+  
+  // Обновляем индекс (если используется где-то еще)
+  if (historyIndex < HISTORY_SIZE) {
+    historyIndex++;
+  }
+}
+
+// Функцию для обновления состояния датчиков
+void updateSensorDisplay() {
+  unsigned long currentTime = millis();
+  
+  // Проверяем, прошла ли 1 секунда с момента срабатывания
+  if (sensor1Active && (currentTime - sensor1DisplayTime > 1000)) {
+    sensor1Active = false;
+  }
+  
+  if (sensor2Active && (currentTime - sensor2DisplayTime > 1000)) {
+    sensor2Active = false;
+  }
 }

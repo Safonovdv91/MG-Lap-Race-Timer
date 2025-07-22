@@ -9,6 +9,12 @@ enum Mode { SPEEDOMETER, LAP_TIMER, RACE_TIMER };
 extern Mode currentMode;
 extern float distance;
 
+// Переменные для отслеживания времени срабатывания пересечения датчика
+extern volatile unsigned long sensor1DisplayTime;
+extern volatile unsigned long sensor2DisplayTime;
+extern bool sensor1Active;
+extern bool sensor2Active;
+
 struct Measurement {
   float value;
   unsigned long timestamp;
@@ -17,16 +23,21 @@ struct Measurement {
 extern Measurement speedHistory[HISTORY_SIZE];
 extern Measurement lapHistory[HISTORY_SIZE];
 extern int historyIndex;
+
 extern volatile unsigned long startTime;
 extern volatile unsigned long endTime;
+
 extern volatile bool sensor1Triggered;
 extern volatile bool sensor2Triggered;
 extern volatile bool measurementReady;
+extern volatile bool measurementInProgress;
+
 extern volatile float currentValue;
 
 void addToHistory(Measurement history[], float value);
 void processMeasurements();
 void IRAM_ATTR handleSensor1();
 void IRAM_ATTR handleSensor2();
+void updateSensorDisplay();
 
 #endif

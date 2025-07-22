@@ -8,6 +8,7 @@ String getHTMLContent() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#FF4F00">
   <title>ESP32 Speedometer</title>
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -33,10 +34,13 @@ String getHTMLContent() {
     </div>
     
     <div class="display">
-      <div id="valueDisplay" class="main-value">0.00</div>
+      <div id="valueDisplay" class="main-value time-display">0.00</div>
       <div id="unitDisplay" class="unit">km/h</div>
     </div>
-    
+    <div id="sensorStatus" class="sensor-status">
+      <span id="sensor1Status">Д1: --- </span>
+      <span id="sensor2Status">Д2: --- </span>
+    </div>
     <div class="history">
       <h2>История проездов</h2>
       <table id="historyTable">
