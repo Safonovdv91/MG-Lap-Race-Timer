@@ -1,5 +1,41 @@
-// web_content.cpp
 #include "web_content.h"
+
+String getWifiSettingsContent() {
+  return   R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WiFi Settings</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 500px; margin: 0 auto; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { background: #4CAF50; color: white; border: none; padding: 10px 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WiFi Settings</h1>
+    <form action="/updatewifi" method="post">
+      <div class="form-group">
+        <label for="ssid">Network Name (SSID):</label>
+        <input type="text" id="ssid" name="ssid" value="%SSID%" required>
+      </div>
+      <div class="form-group">
+        <label for="password">New Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit">Save Settings</button>
+    </form>
+  </div>
+</body>
+</html>
+)rawliteral";
+}
+
 
 String getHTMLContent() {
   return R"rawliteral(

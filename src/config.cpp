@@ -8,7 +8,7 @@ Preferences preferences;
 
 // Определения с инициализацией
 const char* ssid = "MG Speedometer";
-const char* password = "12345678";
+const char* password = "25031991";
 const int serverPort = 80;
 
 void loadWiFiSettings() {
