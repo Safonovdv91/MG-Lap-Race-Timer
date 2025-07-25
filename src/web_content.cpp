@@ -22,6 +22,7 @@ String getHTMLContent() {
         <option value="1">Lap Timer (Один датчик)</option>
         <option value="2">Race Timer (Требуется 2 датчика)</option>
       </select>
+      <button onclick="window.location.href='/wifisettings'">WiFi Settings</button>
       
     <div id="distanceControl" class="distance-control">
       <label>Distance (m):</label>

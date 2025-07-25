@@ -3,6 +3,8 @@
 #include "../include/config.h"
 #include "../include/measurements.h"
 #include "../include/web_handlers.h"
+
+#include "config.h"
 #include <WiFi.h>
 #include <DNSServer.h>
 
@@ -20,6 +22,9 @@ void setup() {
     Serial.println("SPIFFS Mount Failed. Formatting...");
   }
 
+  // Загрузка сохраненных настроек wifi
+  loadWiFiSettings();
+
   WiFi.softAP(ssid, password);
   IPAddress IP = WiFi.softAPIP();
   // Настройка DNS для перенаправления всех запросов
@@ -31,6 +36,8 @@ void setup() {
   Serial.println(IP);
 
   server.on("/", handleRoot);
+  server.on("/wifisettings", handleWiFiSettings);
+  server.on("/updatewifi", HTTP_POST, handleUpdateWiFi);
   server.on("/data", handleData);
   server.on("/reset", handleReset);
   server.on("/mode", HTTP_GET, handleMode);

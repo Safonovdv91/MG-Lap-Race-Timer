@@ -16,5 +16,7 @@ void handleDistance();
 void handleCSS();
 void handleJS();
 void resetMeasurements();
+void handleWiFiSettings();
+void handleUpdateWiFi();
 
 #endif

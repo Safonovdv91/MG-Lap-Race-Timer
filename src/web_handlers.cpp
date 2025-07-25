@@ -2,6 +2,7 @@
 #include "web_handlers.h"
 #include <WebServer.h>
 #include "measurements.h"
+#include "config.h"
 
 WebServer server(serverPort);
 
@@ -105,4 +106,65 @@ void resetMeasurements() {
   sensor2Triggered = false;
   measurementReady = false;
   currentValue = 0.0;
+}
+
+void handleWiFiSettings() {
+  String html = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WiFi Settings</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 500px; margin: 0 auto; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { background: #4CAF50; color: white; border: none; padding: 10px 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WiFi Settings</h1>
+    <form action="/updatewifi" method="post">
+      <div class="form-group">
+        <label for="ssid">Network Name (SSID):</label>
+        <input type="text" id="ssid" name="ssid" value="%SSID%" required>
+      </div>
+      <div class="form-group">
+        <label for="password">New Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit">Save Settings</button>
+    </form>
+  </div>
+</body>
+</html>
+)rawliteral";
+
+  // Заменить плейсхолдер текущим SSID
+  html.replace("%SSID%", ssid);
+  server.send(200, "text/html", html);
+}
+
+void handleUpdateWiFi() {
+  if (server.method() == HTTP_POST) {
+    String newSSID = server.arg("ssid");
+    String newPassword = server.arg("password");
+    
+    // Обновляем конфигурацию
+    ssid = newSSID.c_str();
+    password = newPassword.c_str();
+    
+    // Сохраняем настройки
+    saveWiFiSettings();
+    // Здесь можно добавить сохранение в EEPROM или файл
+    
+    // Перезапускаем точку доступа с новыми параметрами
+    WiFi.softAPdisconnect(true);
+    WiFi.softAP(ssid, password);
+    
+    server.send(200, "text/plain", "WiFi settings updated. AP restarted with new credentials.");
+  }
 }

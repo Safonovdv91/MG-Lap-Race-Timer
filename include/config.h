@@ -2,10 +2,19 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <Preferences.h>
+
+extern Preferences preferences;
+
 // Объявления без инициализации
 extern const char* ssid;
 extern const char* password;
 extern const int serverPort;
+
+
+// Объявления функций
+void loadWiFiSettings();
+void saveWiFiSettings();
 
 // Настройки пинов
 #define SENSOR1_PIN 13
