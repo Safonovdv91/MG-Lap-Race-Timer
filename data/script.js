@@ -6,7 +6,7 @@ let raceStartTime = 0;
 let isRaceActive = false;
 
 function updateDisplay() {
-  fetch('/data')
+  fetch('api/v1/data')
     .then(response => response.json())
     .then(data => {
       updateSensorStatus(data.sensor1Active, data.sensor2Active);
@@ -79,13 +79,13 @@ function formatDateTime(timestamp) {
 
 function changeMode() {
   const mode = document.getElementById('modeSelect').value;
-  fetch('/mode?value=' + mode)
+  fetch('/api/v1/mode?value=' + mode)
     .then(() => updateDisplay());
 }
 
 
 function reset() {
-  fetch('/reset')
+  fetch('/api/v1/reset')
     .then(() => updateDisplay());
 }
 
@@ -102,7 +102,7 @@ function changeDistance(step) {
 
 function updateDistance() {
   const distance = document.getElementById('distanceInput').value;
-  fetch('/distance?value=' + distance)
+  fetch('/api/v1/distance?value=' + distance)
     .then(() => {
       // Не обновляем весь дисплей, только значение
       document.getElementById('valueDisplay').textContent = 

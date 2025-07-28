@@ -35,13 +35,14 @@ void setup() {
   Serial.print("AP IP address: ");
   Serial.println(IP);
 
+  server.on("/api/v1/data", handleData);
+  server.on("/api/v1/reset", handleReset);
+  server.on("/api/v1/mode", HTTP_GET, handleMode);
+  server.on("/api/v1/distance", HTTP_GET, handleDistance);
+  
   server.on("/", handleRoot);
   server.on("/wifisettings", handleWiFiSettings);
   server.on("/updatewifi", HTTP_POST, handleUpdateWiFi);
-  server.on("/data", handleData);
-  server.on("/reset", handleReset);
-  server.on("/mode", HTTP_GET, handleMode);
-  server.on("/distance", HTTP_GET, handleDistance);
   server.on("/style.css", handleCSS);
   server.on("/script.js", handleJS);
 
