@@ -20,22 +20,26 @@ volatile bool measurementInProgress = false;
 // Переменные времени срабатывания датчика
 volatile unsigned long sensor1DisplayTime = 0;
 volatile unsigned long sensor2DisplayTime = 0;
+volatile unsigned long lastInterrupt = 0;
+
 bool sensor1Active = false;
 bool sensor2Active = false;
 
+// переменная отображение времени
+volatile unsigned long currentRaceTime = 0;
 
 volatile float currentValue = 0.0;
+
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
-  static unsigned long lastInterrupt = 0;
   unsigned long now = micros();
-  
-  if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
+
+  if (now - lastInterrupt < DEBOUNCE_TIME) return;
   lastInterrupt = now;
 
   // Обновление времени отображения
-  sensor1DisplayTime = millis();
   sensor1Active = true;
+  sensor1DisplayTime = micros();
 
   if (currentMode == SPEEDOMETER) {
     if (!sensor1Triggered && !sensor2Triggered) {
@@ -54,9 +58,11 @@ void IRAM_ATTR handleSensor1() {
       measurementReady = true;
     }
   }
+
   else if (currentMode == RACE_TIMER) {
     if (!sensor1Triggered) {
       startTime = now;
+      currentRaceTime = now; // Инициализация таймера
       sensor1Triggered = true;
     }
   }
@@ -66,11 +72,11 @@ void IRAM_ATTR handleSensor2() {
   static unsigned long lastInterrupt = 0;
   unsigned long now = micros();
   
-  if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
+  if (now - lastInterrupt < DEBOUNCE_TIME) return;
   lastInterrupt = now;
 
   // Обновление времени отображения сработки датчика
-  sensor2DisplayTime = millis();
+  sensor2DisplayTime = micros();
   sensor2Active = true;
 
   if (currentMode == SPEEDOMETER) {
@@ -125,7 +131,7 @@ void addToHistory(Measurement history[], float value) {
 
 // Функцию для обновления состояния датчиков
 void updateSensorDisplay() {
-  unsigned long currentTime = millis();
+  unsigned long currentTime = micros();
   
   // Проверяем, прошла ли 1 секунда с момента срабатывания
   if (sensor1Active && (currentTime - sensor1DisplayTime > 1000)) {
@@ -134,5 +140,12 @@ void updateSensorDisplay() {
   
   if (sensor2Active && (currentTime - sensor2DisplayTime > 1000)) {
     sensor2Active = false;
+  }
+}
+
+// Функцию для обновления времени
+void updateRaceTimer() {
+  if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER) && sensor1Triggered && !measurementReady) {
+    currentRaceTime = micros(); // Обновляем время в реальном времени
   }
 }

@@ -7,7 +7,7 @@
 Preferences preferences;
 
 // Определения с инициализацией
-const char* ssid = "MG Speedometer";
+const char* ssid = "MG";
 const char* password = "25031991";
 const int serverPort = 80;
 

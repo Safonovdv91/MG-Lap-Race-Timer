@@ -1,5 +1,9 @@
 let currentMode = 0;
 let historyData = [];
+let raceTimerInterval = null;
+let lastRaceTime = 0;
+let raceStartTime = 0;
+let isRaceActive = false;
 
 function updateDisplay() {
   fetch('/data')
@@ -10,16 +14,19 @@ function updateDisplay() {
       document.getElementById('modeSelect').value = currentMode;
       document.getElementById('distanceInput').value = data.distance;
 
-      // Обновление главного дисплея
+      // Обработка разных режимов
       const valueDisplay = document.getElementById('valueDisplay');
+      const unitDisplay = document.getElementById('unitDisplay');
+
+      // Подсветка режима измерения
       if (data.measurementInProgress) { // Добавим этот флаг в JSON
-        valueDisplay.innerHTML = `<span class="active-measurement">${formatTime(data.currentValue)}</span>`;
+        valueDisplay.innerHTML = `<span class="active-measurement">${formatTime(data.currentTime)}</span>`;
       } else {
         valueDisplay.textContent = currentMode == 0 ? 
           data.currentValue.toFixed(2) : 
           formatTime(data.currentValue);
       }
-      const unitDisplay = document.getElementById('unitDisplay');
+
 
       if (currentMode == 0) { // Speedometer
         valueDisplay.textContent = data.currentValue.toFixed(2);
@@ -124,5 +131,5 @@ function updateSensorStatus(sensor1Active, sensor2Active) {
 
 
 // Update every 300ms
-setInterval(updateDisplay, 300);
+setInterval(updateDisplay, 1000);
 updateDisplay();

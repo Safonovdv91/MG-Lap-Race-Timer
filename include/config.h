@@ -19,9 +19,10 @@ void saveWiFiSettings();
 // Настройки пинов
 #define SENSOR1_PIN 13
 #define SENSOR2_PIN 12
-#define DEBOUNCE_TIME 50
+#define DEBOUNCE_TIME 5 * 1000000 // задержка от срабатывания датчиков пересечения 5сек
 #define MIN_LAP_TIME 3000000
 #define HISTORY_SIZE 5
+#define DATA_UPDATE_INTERVAL 100 // Интервал обновления данных (мс)
 
 #endif
 

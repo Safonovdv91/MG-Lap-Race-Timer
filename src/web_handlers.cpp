@@ -32,7 +32,19 @@ void handleWiFiSettings() {
 }
 
 void handleData() {
+
+  if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
+    updateRaceTimer();
+  }
+
   String json = "{";
+
+  // Добавляем текущее время для RACE_TIMER
+  if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
+    float raceDuration = (currentRaceTime - startTime) / 1000000.0;
+    json += "\"currentTime\":" + String(raceDuration, 3) + ",";
+  }
+
   json += "\"mode\":" + String(currentMode) + ","; // Режим работы
   json += "\"currentValue\":" + String(currentValue) + ","; // текущее значение
   json += "\"distance\":" + String(distance) + ","; // данные о дистанции
