@@ -26,8 +26,29 @@ bool sensor2Active = false;
 
 // переменная отображение времени
 volatile unsigned long currentRaceTime = 0;
-
 volatile float currentValue = 0.0;
+
+// переменные измерения напряжения
+float batteryVoltage = 0.0;
+int batteryPercentage = 0;
+unsigned long lastBatteryRead = 0;
+
+
+// Функция чтения батареи
+void readBattery() {
+  if (millis() - lastBatteryRead > 5000) { // Читаем каждые 5 секунд
+    int raw = analogRead(BATTERY_PIN);
+    batteryVoltage = (raw * 3.3 / 4095.0) * 2; // Умножаем на коэффициент делителя (100кОм / 100кОм - 1:1)
+    
+    // Рассчитываем процент заряда
+    batteryPercentage = constrain(
+      map(batteryVoltage * 100, BATTERY_MIN_V * 100, BATTERY_MAX_V * 100, 0, 100),
+      0, 100
+    );
+    
+    lastBatteryRead = millis();
+  }
+}
 
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
@@ -98,6 +119,7 @@ void IRAM_ATTR handleSensor2() {
 }
 
 void processMeasurements() {
+  readBattery(); // Чтение данных батарейки
   if (measurementReady) {
     measurementInProgress = false;
     unsigned long duration = endTime - startTime;

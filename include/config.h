@@ -31,3 +31,8 @@ void saveWiFiSettings();
 #define MEASUREMENT_LED_PIN 4 // Пин для светодиода измерений
 #define LED_BLINK_INTERVAL 2000 // Интервал моргания 2 секунды
 #define LED_BLINK_DURATION 500  // Длительность моргания 0.5 секунды
+
+// измерение напряжения
+#define BATTERY_PIN 34
+#define BATTERY_MIN_V 3.0  // Минимальное напряжение (0%)
+#define BATTERY_MAX_V 4.2  // Максимальное напряжение (100%)

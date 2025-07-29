@@ -5,6 +5,27 @@ let lastRaceTime = 0;
 let raceStartTime = 0;
 let isRaceActive = false;
 
+function updateBatteryInfo(voltage, percentage) {
+  const batteryInfo = document.getElementById('batteryInfo');
+  
+  let html = `
+    <div style="display: flex; align-items: center; gap: 5px;">
+      <div style="position: relative; width: 24px; height: 12px; border: 1px solid #ccc;">
+        <div style="position: absolute; 
+                    height: 100%; 
+                    width: ${percentage}%; 
+                    background: ${percentage > 20 ? '#4CAF50' : '#F44336'};">
+        </div>
+      </div>
+      <div style="font-size: 12px;">
+        ${voltage}V (${percentage}%)
+      </div>
+    </div>
+  `;
+  
+  batteryInfo.innerHTML = html;
+}
+
 function updateDisplay() {
   fetch('api/v1/data')
     .then(response => response.json())
@@ -26,8 +47,6 @@ function updateDisplay() {
           data.currentValue.toFixed(2) : 
           formatTime(data.currentValue);
       }
-
-
       if (currentMode == 0) { // Speedometer
         valueDisplay.textContent = data.currentValue.toFixed(2);
         unitDisplay.textContent = 'km/h';
@@ -60,6 +79,7 @@ function updateDisplay() {
           tableBody.appendChild(row);
         }
       }
+      updateBatteryInfo(data.batteryVoltage, data.batteryPercentage);
     });
 }
 

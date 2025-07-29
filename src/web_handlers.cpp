@@ -65,8 +65,9 @@ void handleData() {
     if (i > 0) json += ",";
     json += "{\"value\":" + String(lapHistory[i].value) + ",\"time\":" + String(lapHistory[i].timestamp) + "}";
   }
-  json += "]";
-  
+  json += "],";
+  json += "\"batteryVoltage\":" + String(batteryVoltage, 2) + ",";
+  json += "\"batteryPercentage\":" + String(batteryPercentage);
   json += "}";
   server.send(200, "application/json", json);
 }

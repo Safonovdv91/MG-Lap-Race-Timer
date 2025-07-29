@@ -49,6 +49,7 @@ String getHTMLContent() {
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<div id="batteryInfo" style="position: fixed; top: 10px; right: 10px; z-index: 100;"></div>
   <div class="container">
     <h1>MG Race/Lap/Speed timer</h1>
     
