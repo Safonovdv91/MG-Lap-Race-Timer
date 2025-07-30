@@ -13,8 +13,12 @@ DNSServer dnsServer;
 void setup() {
   Serial.begin(115200);
   
-  pinMode(SENSOR1_PIN, INPUT_PULLUP);
-  pinMode(SENSOR2_PIN, INPUT_PULLUP);
+  // В зависимости от типа датчика необходимо коммутировать +3.3V
+  // в большинстве случаем коммутация  происходит через + в ином расскоментировать.
+  // pinMode(SENSOR1_PIN, INPUT_PULLUP);
+  // pinMode(SENSOR2_PIN, INPUT_PULLUP);
+  pinMode(SENSOR1_PIN, INPUT_PULLDOWN);
+  pinMode(SENSOR2_PIN, INPUT_PULLDOWN);
   attachInterrupt(digitalPinToInterrupt(SENSOR1_PIN), handleSensor1, FALLING);
   attachInterrupt(digitalPinToInterrupt(SENSOR2_PIN), handleSensor2, FALLING);
 
