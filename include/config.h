@@ -26,8 +26,8 @@ void saveWiFiSettings();
 //     GPIO6-11 — подключены к внутренней flash-памяти (их использование может "убить" плату).
 //     GPIO34-39 — только входные пины (без подтяжки), но безопасны для датчиков.
 
-#define SENSOR1_PIN 13
-#define SENSOR2_PIN 12
+#define SENSOR1_PIN 14
+#define SENSOR2_PIN 27
 #define DEBOUNCE_TIME 5 * 1000000 // задержка от срабатывания датчиков пересечения 5сек
 #define MIN_LAP_TIME 3000000
 #define HISTORY_SIZE 5
