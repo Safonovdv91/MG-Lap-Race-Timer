@@ -20,22 +20,48 @@ volatile bool measurementInProgress = false;
 // Переменные времени срабатывания датчика
 volatile unsigned long sensor1DisplayTime = 0;
 volatile unsigned long sensor2DisplayTime = 0;
+
 bool sensor1Active = false;
 bool sensor2Active = false;
 
-
+// переменная отображение времени
+volatile unsigned long currentRaceTime = 0;
 volatile float currentValue = 0.0;
+
+// переменные измерения напряжения
+float batteryVoltage = 0.0;
+int batteryPercentage = 0;
+unsigned long lastBatteryRead = 0;
+
+
+// Функция чтения батареи
+void readBattery() {
+  if (millis() - lastBatteryRead > 5000) { // Читаем каждые 5 секунд
+    int raw = analogRead(BATTERY_PIN);
+    batteryVoltage = (raw * 3.3 / 4095.0) * 2; // Умножаем на коэффициент делителя (100кОм / 100кОм - 1:1)
+    
+    // Рассчитываем процент заряда
+    batteryPercentage = constrain(
+      map(batteryVoltage * 100, BATTERY_MIN_V * 100, BATTERY_MAX_V * 100, 0, 100),
+      0, 100
+    );
+    
+    lastBatteryRead = millis();
+  }
+}
+
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
-  static unsigned long lastInterrupt = 0;
   unsigned long now = micros();
-  
-  if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
+  sensor1Active = true;
+  static unsigned long lastInterrupt = 0;
+
+
+  if (now - lastInterrupt < DEBOUNCE_TIME) return;
   lastInterrupt = now;
 
   // Обновление времени отображения
-  sensor1DisplayTime = millis();
-  sensor1Active = true;
+  sensor1DisplayTime = micros();
 
   if (currentMode == SPEEDOMETER) {
     if (!sensor1Triggered && !sensor2Triggered) {
@@ -54,24 +80,27 @@ void IRAM_ATTR handleSensor1() {
       measurementReady = true;
     }
   }
+
   else if (currentMode == RACE_TIMER) {
     if (!sensor1Triggered) {
       startTime = now;
+      currentRaceTime = now; // Инициализация таймера
       sensor1Triggered = true;
     }
   }
 }
 
 void IRAM_ATTR handleSensor2() {
-  static unsigned long lastInterrupt = 0;
   unsigned long now = micros();
+  sensor2Active = true;
+  static unsigned long lastInterrupt = 0;
+
   
-  if (now - lastInterrupt < DEBOUNCE_TIME * 1000) return;
+  if (now - lastInterrupt < DEBOUNCE_TIME) return;
   lastInterrupt = now;
 
   // Обновление времени отображения сработки датчика
-  sensor2DisplayTime = millis();
-  sensor2Active = true;
+  sensor2DisplayTime = micros();
 
   if (currentMode == SPEEDOMETER) {
     if (sensor1Triggered && !sensor2Triggered) {
@@ -90,6 +119,7 @@ void IRAM_ATTR handleSensor2() {
 }
 
 void processMeasurements() {
+  readBattery(); // Чтение данных батарейки
   if (measurementReady) {
     measurementInProgress = false;
     unsigned long duration = endTime - startTime;
@@ -125,14 +155,21 @@ void addToHistory(Measurement history[], float value) {
 
 // Функцию для обновления состояния датчиков
 void updateSensorDisplay() {
-  unsigned long currentTime = millis();
+  unsigned long currentTime = micros();
   
-  // Проверяем, прошла ли 1 секунда с момента срабатывания
-  if (sensor1Active && (currentTime - sensor1DisplayTime > 1000)) {
+  // Проверяем, прошло ли 3 секунды с момента срабатывания для отображения сработки датчиков
+  if (sensor1Active && (currentTime - sensor1DisplayTime > 3000000)) {
     sensor1Active = false;
   }
   
-  if (sensor2Active && (currentTime - sensor2DisplayTime > 1000)) {
+  if (sensor2Active && (currentTime - sensor2DisplayTime > 3000000)) {
     sensor2Active = false;
+  }
+}
+
+// Функцию для обновления времени
+void updateRaceTimer() {
+  if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER) && sensor1Triggered && !measurementReady) {
+    currentRaceTime = micros(); // Обновляем время в реальном времени
   }
 }

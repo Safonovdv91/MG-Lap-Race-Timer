@@ -5,5 +5,6 @@
 #include <Arduino.h>
 
 String getHTMLContent();
+String getWifiSettingsContent();
 
 #endif

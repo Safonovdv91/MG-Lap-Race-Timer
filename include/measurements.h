@@ -32,12 +32,18 @@ extern volatile bool sensor2Triggered;
 extern volatile bool measurementReady;
 extern volatile bool measurementInProgress;
 
+extern volatile unsigned long currentRaceTime; // Для режима отображения реального времени
 extern volatile float currentValue;
+
+// Переменные напряжения питания
+extern float batteryVoltage;
+extern int batteryPercentage;
 
 void addToHistory(Measurement history[], float value);
 void processMeasurements();
 void IRAM_ATTR handleSensor1();
 void IRAM_ATTR handleSensor2();
 void updateSensorDisplay();
+void updateRaceTimer();
 
 #endif

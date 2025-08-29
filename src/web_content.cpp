@@ -1,5 +1,41 @@
-// web_content.cpp
 #include "web_content.h"
+
+String getWifiSettingsContent() {
+  return   R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WiFi Settings</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 500px; margin: 0 auto; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { background: #4CAF50; color: white; border: none; padding: 10px 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WiFi Settings</h1>
+    <form action="/updatewifi" method="post">
+      <div class="form-group">
+        <label for="ssid">Network Name (SSID):</label>
+        <input type="text" id="ssid" name="ssid" value="%SSID%" required>
+      </div>
+      <div class="form-group">
+        <label for="password">New Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit">Save Settings</button>
+    </form>
+  </div>
+</body>
+</html>
+)rawliteral";
+}
+
 
 String getHTMLContent() {
   return R"rawliteral(
@@ -13,6 +49,7 @@ String getHTMLContent() {
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<div id="batteryInfo" style="position: fixed; top: 10px; right: 10px; z-index: 100;"></div>
   <div class="container">
     <h1>MG Race/Lap/Speed timer</h1>
     
@@ -22,6 +59,7 @@ String getHTMLContent() {
         <option value="1">Lap Timer (Один датчик)</option>
         <option value="2">Race Timer (Требуется 2 датчика)</option>
       </select>
+      <button onclick="window.location.href='/wifisettings'">WiFi Settings</button>
       
     <div id="distanceControl" class="distance-control">
       <label>Distance (m):</label>

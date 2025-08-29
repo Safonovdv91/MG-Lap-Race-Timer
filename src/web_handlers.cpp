@@ -2,6 +2,7 @@
 #include "web_handlers.h"
 #include <WebServer.h>
 #include "measurements.h"
+#include "config.h"
 
 WebServer server(serverPort);
 
@@ -22,8 +23,28 @@ void handleRoot() {
   server.send(200, "text/html", html);
 }
 
+void handleWiFiSettings() {
+  String html = getWifiSettingsContent();
+
+  // Замена плейсхолдера текущим SSID
+  html.replace("%SSID%", ssid);
+  server.send(200, "text/html", html);
+}
+
 void handleData() {
+
+  if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
+    updateRaceTimer();
+  }
+
   String json = "{";
+
+  // Добавляем текущее время для RACE_TIMER
+  if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
+    float raceDuration = (currentRaceTime - startTime) / 1000000.0;
+    json += "\"currentTime\":" + String(raceDuration, 3) + ",";
+  }
+
   json += "\"mode\":" + String(currentMode) + ","; // Режим работы
   json += "\"currentValue\":" + String(currentValue) + ","; // текущее значение
   json += "\"distance\":" + String(distance) + ","; // данные о дистанции
@@ -44,8 +65,9 @@ void handleData() {
     if (i > 0) json += ",";
     json += "{\"value\":" + String(lapHistory[i].value) + ",\"time\":" + String(lapHistory[i].timestamp) + "}";
   }
-  json += "]";
-  
+  json += "],";
+  json += "\"batteryVoltage\":" + String(batteryVoltage, 2) + ",";
+  json += "\"batteryPercentage\":" + String(batteryPercentage);
   json += "}";
   server.send(200, "application/json", json);
 }
@@ -105,4 +127,25 @@ void resetMeasurements() {
   sensor2Triggered = false;
   measurementReady = false;
   currentValue = 0.0;
+}
+
+void handleUpdateWiFi() {
+  if (server.method() == HTTP_POST) {
+    String newSSID = server.arg("ssid");
+    String newPassword = server.arg("password");
+    
+    // Обновляем конфигурацию
+    ssid = newSSID.c_str();
+    password = newPassword.c_str();
+    
+    // Сохраняем настройки
+    saveWiFiSettings();
+    // Здесь можно добавить сохранение в EEPROM или файл
+    
+    // Перезапускаем точку доступа с новыми параметрами
+    WiFi.softAPdisconnect(true);
+    WiFi.softAP(ssid, password);
+    
+    server.send(200, "text/plain", "WiFi settings updated. AP restarted with new credentials.");
+  }
 }

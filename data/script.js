@@ -1,8 +1,33 @@
 let currentMode = 0;
 let historyData = [];
+let raceTimerInterval = null;
+let lastRaceTime = 0;
+let raceStartTime = 0;
+let isRaceActive = false;
+
+function updateBatteryInfo(voltage, percentage) {
+  const batteryInfo = document.getElementById('batteryInfo');
+  
+  let html = `
+    <div style="display: flex; align-items: center; gap: 5px;">
+      <div style="position: relative; width: 24px; height: 12px; border: 1px solid #ccc;">
+        <div style="position: absolute; 
+                    height: 100%; 
+                    width: ${percentage}%; 
+                    background: ${percentage > 20 ? '#4CAF50' : '#F44336'};">
+        </div>
+      </div>
+      <div style="font-size: 12px;">
+        ${voltage}V (${percentage}%)
+      </div>
+    </div>
+  `;
+  
+  batteryInfo.innerHTML = html;
+}
 
 function updateDisplay() {
-  fetch('/data')
+  fetch('api/v1/data')
     .then(response => response.json())
     .then(data => {
       updateSensorStatus(data.sensor1Active, data.sensor2Active);
@@ -10,17 +35,18 @@ function updateDisplay() {
       document.getElementById('modeSelect').value = currentMode;
       document.getElementById('distanceInput').value = data.distance;
 
-      // Обновление главного дисплея
+      // Обработка разных режимов
       const valueDisplay = document.getElementById('valueDisplay');
+      const unitDisplay = document.getElementById('unitDisplay');
+
+      // Подсветка режима измерения
       if (data.measurementInProgress) { // Добавим этот флаг в JSON
-        valueDisplay.innerHTML = `<span class="active-measurement">${formatTime(data.currentValue)}</span>`;
+        valueDisplay.innerHTML = `<span class="active-measurement">${formatTime(data.currentTime)}</span>`;
       } else {
         valueDisplay.textContent = currentMode == 0 ? 
           data.currentValue.toFixed(2) : 
           formatTime(data.currentValue);
       }
-      const unitDisplay = document.getElementById('unitDisplay');
-
       if (currentMode == 0) { // Speedometer
         valueDisplay.textContent = data.currentValue.toFixed(2);
         unitDisplay.textContent = 'km/h';
@@ -53,6 +79,7 @@ function updateDisplay() {
           tableBody.appendChild(row);
         }
       }
+      updateBatteryInfo(data.batteryVoltage, data.batteryPercentage);
     });
 }
 
@@ -72,13 +99,13 @@ function formatDateTime(timestamp) {
 
 function changeMode() {
   const mode = document.getElementById('modeSelect').value;
-  fetch('/mode?value=' + mode)
+  fetch('/api/v1/mode?value=' + mode)
     .then(() => updateDisplay());
 }
 
 
 function reset() {
-  fetch('/reset')
+  fetch('/api/v1/reset')
     .then(() => updateDisplay());
 }
 
@@ -95,7 +122,7 @@ function changeDistance(step) {
 
 function updateDistance() {
   const distance = document.getElementById('distanceInput').value;
-  fetch('/distance?value=' + distance)
+  fetch('/api/v1/distance?value=' + distance)
     .then(() => {
       // Не обновляем весь дисплей, только значение
       document.getElementById('valueDisplay').textContent = 
@@ -124,5 +151,5 @@ function updateSensorStatus(sensor1Active, sensor2Active) {
 
 
 // Update every 300ms
-setInterval(updateDisplay, 300);
+setInterval(updateDisplay, 1000);
 updateDisplay();
