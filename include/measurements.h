@@ -10,8 +10,8 @@ extern Mode currentMode;
 extern float distance;
 
 // Переменные для отслеживания времени срабатывания пересечения датчика
-extern volatile unsigned long sensor1DisplayTime;
-extern volatile unsigned long sensor2DisplayTime;
+extern volatile unsigned long long sensor1DisplayTime;
+extern volatile unsigned long long sensor2DisplayTime;
 extern bool sensor1Active;
 extern bool sensor2Active;
 

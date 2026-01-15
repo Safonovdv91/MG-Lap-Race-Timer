@@ -4,7 +4,6 @@
 #include "../include/measurements.h"
 #include "../include/web_handlers.h"
 
-#include "config.h"
 #include <WiFi.h>
 #include <DNSServer.h>
 

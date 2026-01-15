@@ -21,8 +21,8 @@ std::atomic<bool> measurementReady{false};
 std::atomic<bool> measurementInProgress{false};
 
 // Переменные времени срабатывания датчика
-volatile unsigned long sensor1DisplayTime = 0;
-volatile unsigned long sensor2DisplayTime = 0;
+volatile unsigned long long sensor1DisplayTime = 0;
+volatile unsigned long long sensor2DisplayTime = 0;
 
 bool sensor1Active = false;
 bool sensor2Active = false;
@@ -55,9 +55,9 @@ void readBattery() {
 
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
-  unsigned long now = micros();
+  unsigned long long now = micros();
   sensor1Active = true;
-  static unsigned long lastInterrupt = 0;
+  static unsigned long long lastInterrupt = 0;
 
   if (now - lastInterrupt < DEBOUNCE_TIME) return;
   lastInterrupt = now;
@@ -93,9 +93,9 @@ void IRAM_ATTR handleSensor1() {
 }
 
 void IRAM_ATTR handleSensor2() {
-  unsigned long now = micros();
+  unsigned long long now = micros();
   sensor2Active = true;
-  static unsigned long lastInterrupt = 0;
+  static unsigned long long lastInterrupt = 0;
 
   
   if (now - lastInterrupt < DEBOUNCE_TIME) return;
@@ -166,7 +166,7 @@ void addToHistory(Measurement history[], float value) {
 
 // Функцию для обновления состояния датчиков
 void updateSensorDisplay() {
-  unsigned long currentTime = micros();
+  unsigned long long currentTime = micros();
   
   // Проверяем, прошло ли 3 секунды с момента срабатывания для отображения сработки датчиков
   if (sensor1Active && (currentTime - sensor1DisplayTime > 3000000)) {
