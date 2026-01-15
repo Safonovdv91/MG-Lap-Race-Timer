@@ -1,5 +1,6 @@
 #include "measurements.h"
 #include "config.h"
+#include <atomic>
 
 // Инициализация переменных
 Mode currentMode = SPEEDOMETER;
@@ -9,13 +10,13 @@ Measurement speedHistory[HISTORY_SIZE];
 Measurement lapHistory[HISTORY_SIZE];
 int historyIndex = 0;
 
-volatile unsigned long startTime = 0;
-volatile unsigned long endTime = 0;
+std::atomic<unsigned long> startTime{0};
+std::atomic<unsigned long> endTime{0};
 
-volatile bool sensor1Triggered = false;
-volatile bool sensor2Triggered = false;
-volatile bool measurementReady = false;
-volatile bool measurementInProgress = false;
+std::atomic<bool> sensor1Triggered{false};
+std::atomic<bool> sensor2Triggered{false};
+std::atomic<bool> measurementReady{false};
+std::atomic<bool> measurementInProgress{false};
 
 // Переменные времени срабатывания датчика
 volatile unsigned long sensor1DisplayTime = 0;
@@ -56,7 +57,6 @@ void IRAM_ATTR handleSensor1() {
   sensor1Active = true;
   static unsigned long lastInterrupt = 0;
 
-
   if (now - lastInterrupt < DEBOUNCE_TIME) return;
   lastInterrupt = now;
 
@@ -64,28 +64,28 @@ void IRAM_ATTR handleSensor1() {
   sensor1DisplayTime = micros();
 
   if (currentMode == SPEEDOMETER) {
-    if (!sensor1Triggered && !sensor2Triggered) {
-      measurementInProgress = true;
-      startTime = now;
-      sensor1Triggered = true;
+    if (!sensor1Triggered.load() && !sensor2Triggered.load()) {
+      measurementInProgress.store(true);
+      startTime.store(now);
+      sensor1Triggered.store(true);
     }
   } 
   else if (currentMode == LAP_TIMER) {
-    if (!sensor1Triggered) {
-      startTime = now;
-      sensor1Triggered = true;
-    } else if (now - startTime > MIN_LAP_TIME) {
-      endTime = now;
-      sensor1Triggered = false;
-      measurementReady = true;
+    if (!sensor1Triggered.load()) {
+      startTime.store(now);
+      sensor1Triggered.store(true);
+    } else if (now - startTime.load() > MIN_LAP_TIME) {
+      endTime.store(now);
+      sensor1Triggered.store(false);
+      measurementReady.store(true);
     }
   }
 
   else if (currentMode == RACE_TIMER) {
-    if (!sensor1Triggered) {
-      startTime = now;
+    if (!sensor1Triggered.load()) {
+      startTime.store(now);
       currentRaceTime = now; // Инициализация таймера
-      sensor1Triggered = true;
+      sensor1Triggered.store(true);
     }
   }
 }
@@ -103,26 +103,26 @@ void IRAM_ATTR handleSensor2() {
   sensor2DisplayTime = micros();
 
   if (currentMode == SPEEDOMETER) {
-    if (sensor1Triggered && !sensor2Triggered) {
-      endTime = now;
-      sensor2Triggered = true;
-      measurementReady = true;
+    if (sensor1Triggered.load() && !sensor2Triggered.load()) {
+      endTime.store(now);
+      sensor2Triggered.store(true);
+      measurementReady.store(true);
     }
   }
   else if (currentMode == RACE_TIMER) {
-    if (sensor1Triggered) {
-      endTime = now;
-      sensor1Triggered = false;
-      measurementReady = true;
+    if (sensor1Triggered.load()) {
+      endTime.store(now);
+      sensor1Triggered.store(false);
+      measurementReady.store(true);
     }
   }
 }
 
 void processMeasurements() {
   readBattery(); // Чтение данных батарейки
-  if (measurementReady) {
-    measurementInProgress = false;
-    unsigned long duration = endTime - startTime;
+  if (measurementReady.load()) {
+    measurementInProgress.store(false);
+    unsigned long duration = endTime.load() - startTime.load();
     
     if (currentMode == SPEEDOMETER) {
       currentValue = (distance / (duration / 1000000.0)) * 3.6;
@@ -132,9 +132,9 @@ void processMeasurements() {
       addToHistory(lapHistory, currentValue);
     }
     
-    measurementReady = false;
-    sensor1Triggered = false;
-    sensor2Triggered = false;
+    measurementReady.store(false);
+    sensor1Triggered.store(false);
+    sensor2Triggered.store(false);
   }
 }
 
@@ -169,7 +169,7 @@ void updateSensorDisplay() {
 
 // Функцию для обновления времени
 void updateRaceTimer() {
-  if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER) && sensor1Triggered && !measurementReady) {
+  if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER) && sensor1Triggered.load() && !measurementReady.load()) {
     currentRaceTime = micros(); // Обновляем время в реальном времени
   }
 }

@@ -24,13 +24,13 @@ extern Measurement speedHistory[HISTORY_SIZE];
 extern Measurement lapHistory[HISTORY_SIZE];
 extern int historyIndex;
 
-extern volatile unsigned long startTime;
-extern volatile unsigned long endTime;
+extern std::atomic<unsigned long> startTime;
+extern std::atomic<unsigned long> endTime;
 
-extern volatile bool sensor1Triggered;
-extern volatile bool sensor2Triggered;
-extern volatile bool measurementReady;
-extern volatile bool measurementInProgress;
+extern std::atomic<bool> sensor1Triggered;
+extern std::atomic<bool> sensor2Triggered;
+extern std::atomic<bool> measurementReady;
+extern std::atomic<bool> measurementInProgress;
 
 extern volatile unsigned long currentRaceTime; // Для режима отображения реального времени
 extern volatile float currentValue;

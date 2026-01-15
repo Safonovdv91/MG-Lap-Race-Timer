@@ -3,6 +3,7 @@
 #include <WebServer.h>
 #include "measurements.h"
 #include "config.h"
+#include <atomic>
 
 WebServer server(serverPort);
 
@@ -41,7 +42,7 @@ void handleData() {
 
   // Добавляем текущее время для RACE_TIMER
   if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
-    float raceDuration = (currentRaceTime - startTime) / 1000000.0;
+    float raceDuration = (currentRaceTime - startTime.load()) / 1000000.0;
     json += "\"currentTime\":" + String(raceDuration, 3) + ",";
   }
 
@@ -50,7 +51,7 @@ void handleData() {
   json += "\"distance\":" + String(distance) + ","; // данные о дистанции
   json += "\"sensor1Active\":" + String(sensor1Active ? "true" : "false") + ","; // Состояние датчика 1
   json += "\"sensor2Active\":" + String(sensor2Active ? "true" : "false") + ","; // Состояние датчика 2
-  json += "\"measurementInProgress\":" + String(sensor1Triggered ? "true" : "false") + ","; // Идет ли измерение
+  json += "\"measurementInProgress\":" + String(sensor1Triggered.load() ? "true" : "false") + ","; // Идет ли измерение
   json += "\"historyIndex\":" + String(historyIndex) + ","; // Индекс измерения
   
   json += "\"speedHistory\":[";
@@ -73,10 +74,10 @@ void handleData() {
 }
 
 void handleReset() {
-  startTime = 0;
-  endTime = 0;
-  sensor1Triggered = false;
-  sensor2Triggered = false;
+  startTime.store(0);
+  endTime.store(0);
+  sensor1Triggered.store(false);
+  sensor2Triggered.store(false);
   currentValue = 0.0;
   server.send(200, "text/plain", "OK");
 }
@@ -121,11 +122,11 @@ void handleJS() {
 }
 
 void resetMeasurements() {
-  startTime = 0;
-  endTime = 0;
-  sensor1Triggered = false;
-  sensor2Triggered = false;
-  measurementReady = false;
+  startTime.store(0);
+  endTime.store(0);
+  sensor1Triggered.store(false);
+  sensor2Triggered.store(false);
+  measurementReady.store(false);
   currentValue = 0.0;
 }
 
