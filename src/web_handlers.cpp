@@ -42,7 +42,7 @@ void handleData() {
 
   // Добавляем текущее время для RACE_TIMER
   if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
-    float raceDuration = (currentRaceTime - startTime.load()) / 1000000.0;
+    float raceDuration = (getCurrentRaceTimeSafe() - getStartTimeSafe()) / 1000000.0;
     json += "\"currentTime\":" + String(raceDuration, 3) + ",";
   }
 
@@ -51,7 +51,7 @@ void handleData() {
   json += "\"distance\":" + String(distance) + ","; // данные о дистанции
   json += "\"sensor1Active\":" + String(sensor1Active ? "true" : "false") + ","; // Состояние датчика 1
   json += "\"sensor2Active\":" + String(sensor2Active ? "true" : "false") + ","; // Состояние датчика 2
-  json += "\"measurementInProgress\":" + String(sensor1Triggered.load() ? "true" : "false") + ","; // Идет ли измерение
+  json += "\"measurementInProgress\":" + String(getSensor1TriggeredSafe() ? "true" : "false") + ","; // Идет ли измерение
   json += "\"historyIndex\":" + String(historyIndex) + ","; // Индекс измерения
   
   json += "\"speedHistory\":[";
@@ -127,6 +127,7 @@ void resetMeasurements() {
   sensor1Triggered.store(false);
   sensor2Triggered.store(false);
   measurementReady.store(false);
+  measurementInProgress.store(false);
   currentValue = 0.0;
 }
 
@@ -136,8 +137,10 @@ void handleUpdateWiFi() {
     String newPassword = server.arg("password");
     
     // Обновляем конфигурацию
-    ssid = newSSID.c_str();
-    password = newPassword.c_str();
+    strncpy(ssid, newSSID.c_str(), sizeof(ssid) - 1);
+    ssid[sizeof(ssid) - 1] = '\0';  // Гарантируем терминатор
+    strncpy(password, newPassword.c_str(), sizeof(password) - 1);
+    password[sizeof(password) - 1] = '\0';  // Гарантируем терминатор
     
     // Сохраняем настройки
     saveWiFiSettings();

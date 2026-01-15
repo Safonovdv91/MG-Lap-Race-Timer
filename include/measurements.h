@@ -24,8 +24,8 @@ extern Measurement speedHistory[HISTORY_SIZE];
 extern Measurement lapHistory[HISTORY_SIZE];
 extern int historyIndex;
 
-extern std::atomic<unsigned long> startTime;
-extern std::atomic<unsigned long> endTime;
+extern std::atomic<unsigned long long> startTime;
+extern std::atomic<unsigned long long> endTime;
 
 extern std::atomic<bool> sensor1Triggered;
 extern std::atomic<bool> sensor2Triggered;
@@ -45,5 +45,12 @@ void IRAM_ATTR handleSensor1();
 void IRAM_ATTR handleSensor2();
 void updateSensorDisplay();
 void updateRaceTimer();
+
+// Функции для безопасного получения значений
+unsigned long long getStartTimeSafe();
+unsigned long long getCurrentRaceTimeSafe();
+bool getSensor1TriggeredSafe();
+bool getSensor2TriggeredSafe();
+bool getMeasurementReadySafe();
 
 #endif

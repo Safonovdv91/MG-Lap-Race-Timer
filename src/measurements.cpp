@@ -1,6 +1,8 @@
 #include "measurements.h"
 #include "config.h"
 #include <atomic>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 // Инициализация переменных
 Mode currentMode = SPEEDOMETER;
@@ -10,8 +12,8 @@ Measurement speedHistory[HISTORY_SIZE];
 Measurement lapHistory[HISTORY_SIZE];
 int historyIndex = 0;
 
-std::atomic<unsigned long> startTime{0};
-std::atomic<unsigned long> endTime{0};
+std::atomic<unsigned long long> startTime{0};
+std::atomic<unsigned long long> endTime{0};
 
 std::atomic<bool> sensor1Triggered{false};
 std::atomic<bool> sensor2Triggered{false};
@@ -122,7 +124,7 @@ void processMeasurements() {
   readBattery(); // Чтение данных батарейки
   if (measurementReady.load()) {
     measurementInProgress.store(false);
-    unsigned long duration = endTime.load() - startTime.load();
+    unsigned long long duration = endTime.load() - startTime.load();
     
     if (currentMode == SPEEDOMETER) {
       currentValue = (distance / (duration / 1000000.0)) * 3.6;
@@ -172,4 +174,50 @@ void updateRaceTimer() {
   if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER) && sensor1Triggered.load() && !measurementReady.load()) {
     currentRaceTime = micros(); // Обновляем время в реальном времени
   }
+}
+
+// Функции для безопасного получения значений
+unsigned long long getStartTimeSafe() {
+  unsigned long long val;
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);  // Критическая секция
+  val = startTime.load();
+  taskEXIT_CRITICAL(&mux);
+  return val;
+}
+
+unsigned long long getCurrentRaceTimeSafe() {
+  unsigned long long val;
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);  // Критическая секция
+  val = currentRaceTime;
+  taskEXIT_CRITICAL(&mux);
+  return val;
+}
+
+bool getSensor1TriggeredSafe() {
+  bool val;
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);  // Критическая секция
+  val = sensor1Triggered.load();
+  taskEXIT_CRITICAL(&mux);
+  return val;
+}
+
+bool getSensor2TriggeredSafe() {
+  bool val;
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);  // Критическая секция
+  val = sensor2Triggered.load();
+  taskEXIT_CRITICAL(&mux);
+  return val;
+}
+
+bool getMeasurementReadySafe() {
+  bool val;
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);  // Критическая секция
+  val = measurementReady.load();
+  taskEXIT_CRITICAL(&mux);
+  return val;
 }
