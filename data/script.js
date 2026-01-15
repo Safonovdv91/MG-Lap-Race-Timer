@@ -83,12 +83,12 @@ function updateDisplay() {
     });
 }
 
-// Форматирование времени в mm:ss.ms
+// Форматирование времени в mm:ss.cc (минуты:секунды.сотые_доли_секунды)
 function formatTime(seconds) {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 1000);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+  const cs = Math.floor((seconds % 1) * 100); // Сотые доли секунды
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
 }
 
 // Форматирование даты/времени
@@ -124,9 +124,8 @@ function updateDistance() {
   const distance = document.getElementById('distanceInput').value;
   fetch('/api/v1/distance?value=' + distance)
     .then(() => {
-      // Не обновляем весь дисплей, только значение
-      document.getElementById('valueDisplay').textContent = 
-        (currentMode == 0 ? data.currentValue.toFixed(2) : data.currentValue.toFixed(3));
+      // Обновляем весь дисплей, чтобы получить актуальные данные
+      updateDisplay();
     });
 }
 

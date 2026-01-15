@@ -42,7 +42,12 @@ void handleData() {
 
   // Добавляем текущее время для RACE_TIMER
   if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
-    float raceDuration = (getCurrentRaceTimeSafe() - getStartTimeSafe()) / 1000000.0;
+    unsigned long long startTimeVal = getStartTimeSafe();
+    unsigned long long currentTimeVal = getCurrentRaceTimeSafe();
+    float raceDuration = 0.0;
+    if (currentTimeVal >= startTimeVal && startTimeVal != 0) {
+      raceDuration = (currentTimeVal - startTimeVal) / 1000000.0;
+    }
     json += "\"currentTime\":" + String(raceDuration, 3) + ",";
   }
 
@@ -76,6 +81,7 @@ void handleData() {
 void handleReset() {
   startTime.store(0);
   endTime.store(0);
+  currentRaceTime.store(0); // Добавляем сброс таймера гонки
   sensor1Triggered.store(false);
   sensor2Triggered.store(false);
   currentValue = 0.0;
@@ -124,6 +130,7 @@ void handleJS() {
 void resetMeasurements() {
   startTime.store(0);
   endTime.store(0);
+  currentRaceTime.store(0); // Добавляем сброс таймера гонки
   sensor1Triggered.store(false);
   sensor2Triggered.store(false);
   measurementReady.store(false);

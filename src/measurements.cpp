@@ -28,7 +28,7 @@ bool sensor1Active = false;
 bool sensor2Active = false;
 
 // переменная отображение времени
-volatile unsigned long currentRaceTime = 0;
+std::atomic<unsigned long long> currentRaceTime{0};
 volatile float currentValue = 0.0;
 
 // переменные измерения напряжения
@@ -86,7 +86,7 @@ void IRAM_ATTR handleSensor1() {
   else if (currentMode == RACE_TIMER) {
     if (!sensor1Triggered.load()) {
       startTime.store(now);
-      currentRaceTime = now; // Инициализация таймера
+      currentRaceTime.store(now); // Инициализация таймера
       sensor1Triggered.store(true);
     }
   }
@@ -124,10 +124,19 @@ void processMeasurements() {
   readBattery(); // Чтение данных батарейки
   if (measurementReady.load()) {
     measurementInProgress.store(false);
-    unsigned long long duration = endTime.load() - startTime.load();
+    unsigned long long startTimeVal = startTime.load();
+    unsigned long long endTimeVal = endTime.load();
+    unsigned long long duration = 0;
+    if (endTimeVal >= startTimeVal) {
+      duration = endTimeVal - startTimeVal;
+    }
     
     if (currentMode == SPEEDOMETER) {
-      currentValue = (distance / (duration / 1000000.0)) * 3.6;
+      if (duration > 0) {
+        currentValue = (distance / (duration / 1000000.0)) * 3.6;
+      } else {
+        currentValue = 0.0;
+      }
       addToHistory(speedHistory, currentValue);
     } else {
       currentValue = duration / 1000000.0;
@@ -172,7 +181,7 @@ void updateSensorDisplay() {
 // Функцию для обновления времени
 void updateRaceTimer() {
   if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER) && sensor1Triggered.load() && !measurementReady.load()) {
-    currentRaceTime = micros(); // Обновляем время в реальном времени
+    currentRaceTime.store(micros()); // Обновляем время в реальном времени
   }
 }
 
@@ -187,12 +196,7 @@ unsigned long long getStartTimeSafe() {
 }
 
 unsigned long long getCurrentRaceTimeSafe() {
-  unsigned long long val;
-  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-  taskENTER_CRITICAL(&mux);  // Критическая секция
-  val = currentRaceTime;
-  taskEXIT_CRITICAL(&mux);
-  return val;
+  return currentRaceTime.load();  // Теперь просто возвращаем значение атомарной переменной
 }
 
 bool getSensor1TriggeredSafe() {

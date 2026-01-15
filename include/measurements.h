@@ -32,7 +32,7 @@ extern std::atomic<bool> sensor2Triggered;
 extern std::atomic<bool> measurementReady;
 extern std::atomic<bool> measurementInProgress;
 
-extern volatile unsigned long currentRaceTime; // Для режима отображения реального времени
+extern std::atomic<unsigned long long> currentRaceTime; // Для режима отображения реального времени
 extern volatile float currentValue;
 
 // Переменные напряжения питания
