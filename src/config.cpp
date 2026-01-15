@@ -7,8 +7,8 @@
 Preferences preferences;
 
 // Определения с инициализацией
-const char* ssid = "MG";
-const char* password = "25031991";
+char ssid[32] = "MG";
+char password[64] = "25031991";
 const int serverPort = 80;
 
 void loadWiFiSettings() {
@@ -17,10 +17,12 @@ void loadWiFiSettings() {
   String savedPass = preferences.getString("password", "");
   
   if (!savedSSID.isEmpty()) {
-    ssid = strdup(savedSSID.c_str());
+    strncpy(ssid, savedSSID.c_str(), sizeof(ssid) - 1);
+    ssid[sizeof(ssid) - 1] = '\0';  // Гарантируем терминатор
   }
   if (!savedPass.isEmpty()) {
-    password = strdup(savedPass.c_str());
+    strncpy(password, savedPass.c_str(), sizeof(password) - 1);
+    password[sizeof(password) - 1] = '\0';  // Гарантируем терминатор
   }
   preferences.end();
 }

@@ -7,8 +7,8 @@
 extern Preferences preferences;
 
 // Объявления без инициализации
-extern const char* ssid;
-extern const char* password;
+extern char ssid[32];
+extern char password[64];
 extern const int serverPort;
 
 
