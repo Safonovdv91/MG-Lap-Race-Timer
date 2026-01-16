@@ -3,7 +3,6 @@
 #include <WebServer.h>
 #include "measurements.h"
 #include "config.h"
-#include <atomic>
 
 WebServer server(serverPort);
 
@@ -79,11 +78,14 @@ void handleData() {
 }
 
 void handleReset() {
-  startTime.store(0);
-  endTime.store(0);
-  currentRaceTime.store(0); // Добавляем сброс таймера гонки
-  sensor1Triggered.store(false);
-  sensor2Triggered.store(false);
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);
+  startTime = 0;
+ endTime = 0;
+  currentRaceTime = 0; // Добавляем сброс таймера гонки
+  sensor1Triggered = false;
+  sensor2Triggered = false;
+  taskEXIT_CRITICAL(&mux);
   currentValue = 0.0;
   server.send(200, "text/plain", "OK");
 }
@@ -128,13 +130,16 @@ void handleJS() {
 }
 
 void resetMeasurements() {
-  startTime.store(0);
-  endTime.store(0);
-  currentRaceTime.store(0); // Добавляем сброс таймера гонки
-  sensor1Triggered.store(false);
-  sensor2Triggered.store(false);
-  measurementReady.store(false);
-  measurementInProgress.store(false);
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);
+  startTime = 0;
+  endTime = 0;
+  currentRaceTime = 0; // Добавляем сброс таймера гонки
+  sensor1Triggered = false;
+  sensor2Triggered = false;
+  measurementReady = false;
+  measurementInProgress = false;
+  taskEXIT_CRITICAL(&mux);
   currentValue = 0.0;
 }
 

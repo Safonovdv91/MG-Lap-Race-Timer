@@ -24,15 +24,15 @@ extern Measurement speedHistory[HISTORY_SIZE];
 extern Measurement lapHistory[HISTORY_SIZE];
 extern int historyIndex;
 
-extern std::atomic<unsigned long long> startTime;
-extern std::atomic<unsigned long long> endTime;
+extern volatile unsigned long long startTime;
+extern volatile unsigned long long endTime;
 
-extern std::atomic<bool> sensor1Triggered;
-extern std::atomic<bool> sensor2Triggered;
-extern std::atomic<bool> measurementReady;
-extern std::atomic<bool> measurementInProgress;
+extern volatile bool sensor1Triggered;
+extern volatile bool sensor2Triggered;
+extern volatile bool measurementReady;
+extern volatile bool measurementInProgress;
 
-extern std::atomic<unsigned long long> currentRaceTime; // Для режима отображения реального времени
+extern volatile unsigned long long currentRaceTime; // Для режима отображения реального времени
 extern volatile float currentValue;
 
 // Переменные напряжения питания
@@ -52,5 +52,10 @@ unsigned long long getCurrentRaceTimeSafe();
 bool getSensor1TriggeredSafe();
 bool getSensor2TriggeredSafe();
 bool getMeasurementReadySafe();
+
+// Добавляем объявление мьютекса для синхронизации
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 
 #endif

@@ -1,6 +1,5 @@
 #include "measurements.h"
 #include "config.h"
-#include <atomic>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -12,13 +11,13 @@ Measurement speedHistory[HISTORY_SIZE];
 Measurement lapHistory[HISTORY_SIZE];
 int historyIndex = 0;
 
-std::atomic<unsigned long long> startTime{0};
-std::atomic<unsigned long long> endTime{0};
+volatile unsigned long long startTime = 0;
+volatile unsigned long long endTime = 0;
 
-std::atomic<bool> sensor1Triggered{false};
-std::atomic<bool> sensor2Triggered{false};
-std::atomic<bool> measurementReady{false};
-std::atomic<bool> measurementInProgress{false};
+volatile bool sensor1Triggered = false;
+volatile bool sensor2Triggered = false;
+volatile bool measurementReady = false;
+volatile bool measurementInProgress = false;
 
 // Переменные времени срабатывания датчика
 volatile unsigned long long sensor1DisplayTime = 0;
@@ -28,7 +27,7 @@ bool sensor1Active = false;
 bool sensor2Active = false;
 
 // переменная отображение времени
-std::atomic<unsigned long long> currentRaceTime{0};
+volatile unsigned long long currentRaceTime = 0;
 volatile float currentValue = 0.0;
 
 // переменные измерения напряжения
@@ -66,29 +65,38 @@ void IRAM_ATTR handleSensor1() {
   sensor1DisplayTime = micros();
 
   if (currentMode == SPEEDOMETER) {
-    if (!sensor1Triggered.load() && !sensor2Triggered.load()) {
-      measurementInProgress.store(true);
-      startTime.store(now);
-      sensor1Triggered.store(true);
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+    taskENTER_CRITICAL(&mux);
+    if (!sensor1Triggered && !sensor2Triggered) {
+      measurementInProgress = true;
+      startTime = now;
+      sensor1Triggered = true;
     }
-  } 
+    taskEXIT_CRITICAL(&mux);
+  }
   else if (currentMode == LAP_TIMER) {
-    if (!sensor1Triggered.load()) {
-      startTime.store(now);
-      sensor1Triggered.store(true);
-    } else if (now - startTime.load() > MIN_LAP_TIME) {
-      endTime.store(now);
-      sensor1Triggered.store(false);
-      measurementReady.store(true);
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+    taskENTER_CRITICAL(&mux);
+    if (!sensor1Triggered) {
+      startTime = now;
+      sensor1Triggered = true;
+    } else if (now - startTime > MIN_LAP_TIME) {
+      endTime = now;
+      sensor1Triggered = false;
+      measurementReady = true;
     }
+    taskEXIT_CRITICAL(&mux);
   }
 
   else if (currentMode == RACE_TIMER) {
-    if (!sensor1Triggered.load()) {
-      startTime.store(now);
-      currentRaceTime.store(now); // Инициализация таймера
-      sensor1Triggered.store(true);
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+    taskENTER_CRITICAL(&mux);
+    if (!sensor1Triggered) {
+      startTime = now;
+      currentRaceTime = now; // Инициализация таймера
+      sensor1Triggered = true;
     }
+    taskEXIT_CRITICAL(&mux);
   }
 }
 
@@ -105,27 +113,35 @@ void IRAM_ATTR handleSensor2() {
   sensor2DisplayTime = micros();
 
   if (currentMode == SPEEDOMETER) {
-    if (sensor1Triggered.load() && !sensor2Triggered.load()) {
-      endTime.store(now);
-      sensor2Triggered.store(true);
-      measurementReady.store(true);
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+    taskENTER_CRITICAL(&mux);
+    if (sensor1Triggered && !sensor2Triggered) {
+      endTime = now;
+      sensor2Triggered = true;
+      measurementReady = true;
     }
+    taskEXIT_CRITICAL(&mux);
   }
   else if (currentMode == RACE_TIMER) {
-    if (sensor1Triggered.load()) {
-      endTime.store(now);
-      sensor1Triggered.store(false);
-      measurementReady.store(true);
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+    taskENTER_CRITICAL(&mux);
+    if (sensor1Triggered) {
+      endTime = now;
+      sensor1Triggered = false;
+      measurementReady = true;
     }
+    taskEXIT_CRITICAL(&mux);
   }
 }
 
 void processMeasurements() {
   readBattery(); // Чтение данных батарейки
-  if (measurementReady.load()) {
-    measurementInProgress.store(false);
-    unsigned long long startTimeVal = startTime.load();
-    unsigned long long endTimeVal = endTime.load();
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);
+  if (measurementReady) {
+    measurementInProgress = false;
+    unsigned long long startTimeVal = startTime;
+    unsigned long long endTimeVal = endTime;
     unsigned long long duration = 0;
     if (endTimeVal >= startTimeVal) {
       duration = endTimeVal - startTimeVal;
@@ -143,10 +159,11 @@ void processMeasurements() {
       addToHistory(lapHistory, currentValue);
     }
     
-    measurementReady.store(false);
-    sensor1Triggered.store(false);
-    sensor2Triggered.store(false);
+    measurementReady = false;
+    sensor1Triggered = false;
+    sensor2Triggered = false;
   }
+  taskEXIT_CRITICAL(&mux);
 }
 
 void addToHistory(Measurement history[], float value) {
@@ -180,8 +197,13 @@ void updateSensorDisplay() {
 
 // Функцию для обновления времени
 void updateRaceTimer() {
-  if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER) && sensor1Triggered.load() && !measurementReady.load()) {
-    currentRaceTime.store(micros()); // Обновляем время в реальном времени
+  if ((currentMode == RACE_TIMER || currentMode == LAP_TIMER)) {
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+    taskENTER_CRITICAL(&mux);
+    if (sensor1Triggered && !measurementReady) {
+      currentRaceTime = micros(); // Обновляем время в реальном времени
+    }
+    taskEXIT_CRITICAL(&mux);
   }
 }
 
@@ -190,20 +212,25 @@ unsigned long long getStartTimeSafe() {
   unsigned long long val;
   portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
   taskENTER_CRITICAL(&mux);  // Критическая секция
-  val = startTime.load();
+  val = startTime;
   taskEXIT_CRITICAL(&mux);
   return val;
 }
 
 unsigned long long getCurrentRaceTimeSafe() {
-  return currentRaceTime.load();  // Теперь просто возвращаем значение атомарной переменной
+  unsigned long long val;
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  taskENTER_CRITICAL(&mux);  // Критическая секция
+  val = currentRaceTime;
+  taskEXIT_CRITICAL(&mux);
+  return val;
 }
 
 bool getSensor1TriggeredSafe() {
   bool val;
   portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
   taskENTER_CRITICAL(&mux);  // Критическая секция
-  val = sensor1Triggered.load();
+  val = sensor1Triggered;
   taskEXIT_CRITICAL(&mux);
   return val;
 }
@@ -212,7 +239,7 @@ bool getSensor2TriggeredSafe() {
   bool val;
   portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
   taskENTER_CRITICAL(&mux);  // Критическая секция
-  val = sensor2Triggered.load();
+  val = sensor2Triggered;
   taskEXIT_CRITICAL(&mux);
   return val;
 }
@@ -221,7 +248,7 @@ bool getMeasurementReadySafe() {
   bool val;
   portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
   taskENTER_CRITICAL(&mux);  // Критическая секция
-  val = measurementReady.load();
+  val = measurementReady;
   taskEXIT_CRITICAL(&mux);
   return val;
 }
