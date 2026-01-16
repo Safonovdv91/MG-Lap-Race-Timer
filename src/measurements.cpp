@@ -3,9 +3,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+// Добавляем поддержку ИК сенсоров
+#ifdef USE_IR_SENSORS
+#include "../include/ir_receiver.h"
+#endif
+
 // Инициализация переменных
 Mode currentMode = SPEEDOMETER;
-float distance = 3.0; 
+float distance = 3.0;
 
 Measurement speedHistory[HISTORY_SIZE];
 Measurement lapHistory[HISTORY_SIZE];
@@ -55,7 +60,6 @@ void readBattery() {
 // Реализации функций
 void IRAM_ATTR handleSensor1() {
   unsigned long long now = micros();
-  sensor1Active = true;
   static unsigned long long lastInterrupt = 0;
 
   if (now - lastInterrupt < DEBOUNCE_TIME) return;
@@ -63,6 +67,13 @@ void IRAM_ATTR handleSensor1() {
 
   // Обновление времени отображения
   sensor1DisplayTime = micros();
+
+#ifdef USE_IR_SENSORS
+  // Для ИК сенсоров устанавливаем активность только при пересечении луча
+  sensor1Active = true;
+#else
+  sensor1Active = true;
+#endif
 
   if (currentMode == SPEEDOMETER) {
     portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
@@ -102,7 +113,6 @@ void IRAM_ATTR handleSensor1() {
 
 void IRAM_ATTR handleSensor2() {
   unsigned long long now = micros();
-  sensor2Active = true;
   static unsigned long long lastInterrupt = 0;
 
   
@@ -111,6 +121,13 @@ void IRAM_ATTR handleSensor2() {
 
   // Обновление времени отображения сработки датчика
   sensor2DisplayTime = micros();
+
+#ifdef USE_IR_SENSORS
+  // Для ИК сенсоров устанавливаем активность только при пересечении луча
+  sensor2Active = true;
+#else
+  sensor2Active = true;
+#endif
 
   if (currentMode == SPEEDOMETER) {
     portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
@@ -185,6 +202,12 @@ void addToHistory(Measurement history[], float value) {
 void updateSensorDisplay() {
   unsigned long long currentTime = micros();
   
+#ifdef USE_IR_SENSORS
+  // Для ИК сенсоров обновляем состояние на основе наличия/отсутствия луча
+  // sensor1Active = true, когда луч заблокирован (пересечен)
+  sensor1Active = isIRBeamBlocked1();
+  sensor2Active = isIRBeamBlocked2();
+#else
   // Проверяем, прошло ли 3 секунды с момента срабатывания для отображения сработки датчиков
   if (sensor1Active && (currentTime - sensor1DisplayTime > 3000000)) {
     sensor1Active = false;
@@ -193,6 +216,7 @@ void updateSensorDisplay() {
   if (sensor2Active && (currentTime - sensor2DisplayTime > 3000000)) {
     sensor2Active = false;
   }
+#endif
 }
 
 // Функцию для обновления времени

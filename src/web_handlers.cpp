@@ -4,6 +4,12 @@
 #include "measurements.h"
 #include "config.h"
 
+// Добавляем поддержку ИК сенсоров
+#ifdef USE_IR_SENSORS
+#include "../include/ir_transmitter.h"
+#include "../include/ir_receiver.h"
+#endif
+
 WebServer server(serverPort);
 
 extern Mode currentMode;
@@ -57,6 +63,11 @@ void handleData() {
   json += "\"sensor2Active\":" + String(sensor2Active ? "true" : "false") + ","; // Состояние датчика 2
   json += "\"measurementInProgress\":" + String(getSensor1TriggeredSafe() ? "true" : "false") + ","; // Идет ли измерение
   json += "\"historyIndex\":" + String(historyIndex) + ","; // Индекс измерения
+  
+#ifdef USE_IR_SENSORS
+  json += "\"irSignal1\":" + String(getIRSignalStatus1() ? "true" : "false") + ","; // Статус ИК сигнала 1
+  json += "\"irSignal2\":" + String(getIRSignalStatus2() ? "true" : "false") + ","; // Статус ИК сигнала 2
+#endif
   
   json += "\"speedHistory\":[";
   for (int i = 0; i < min(historyIndex, HISTORY_SIZE); i++) {

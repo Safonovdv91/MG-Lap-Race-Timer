@@ -45,3 +45,9 @@ void saveWiFiSettings();
 #define BATTERY_PIN 34
 #define BATTERY_MIN_V 3.0  // Минимальное напряжение (0%)
 #define BATTERY_MAX_V 4.2  // Максимальное напряжение (100%)
+
+// Добавляем определения для ИК передатчиков
+#ifdef USE_IR_SENSORS
+#define IR_TX1_PIN 13  // Пин для управления первым ИК передатчиком
+#define IR_TX2_PIN 12  // Пин для управления вторым ИК передатчиком
+#endif

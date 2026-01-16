@@ -4,6 +4,12 @@
 #include "../include/measurements.h"
 #include "../include/web_handlers.h"
 
+// Добавляем поддержку ИК сенсоров
+#ifdef USE_IR_SENSORS
+#include "../include/ir_transmitter.h"
+#include "../include/ir_receiver.h"
+#endif
+
 #include <WiFi.h>
 #include <DNSServer.h>
 
@@ -12,14 +18,32 @@ DNSServer dnsServer;
 void setup() {
   Serial.begin(115200);
   
+#ifdef USE_IR_SENSORS
+  // Инициализация ИК передатчиков и приемников
+  initIRTransmitters();
+  initIRReceivers();
+  
+  // Настройка пинов датчиков как входы для ИК приемников
+  pinMode(SENSOR1_PIN, INPUT_PULLUP);
+  pinMode(SENSOR2_PIN, INPUT_PULLUP);
+  
+  // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
+  // При пересечении луча на пинах будет HIGH (нет сигнала)
+  // Поэтому используем прерывание по RISING (по положительному фронту)
+  attachInterrupt(digitalPinToInterrupt(SENSOR1_PIN), handleSensor1, RISING);
+  attachInterrupt(digitalPinToInterrupt(SENSOR2_PIN), handleSensor2, RISING);
+#else
   // В зависимости от типа датчика необходимо коммутировать +3.3V
   // в большинстве случаем коммутация  происходит через + в ином расскоментировать.
   // pinMode(SENSOR1_PIN, INPUT_PULLUP);
   // pinMode(SENSOR2_PIN, INPUT_PULLUP);
   pinMode(SENSOR1_PIN, INPUT_PULLDOWN);
   pinMode(SENSOR2_PIN, INPUT_PULLDOWN);
+  
+  // Для механических датчиков используем FALLING прерывание
   attachInterrupt(digitalPinToInterrupt(SENSOR1_PIN), handleSensor1, FALLING);
   attachInterrupt(digitalPinToInterrupt(SENSOR2_PIN), handleSensor2, FALLING);
+#endif
 
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS Mount Failed. Formatting...");
