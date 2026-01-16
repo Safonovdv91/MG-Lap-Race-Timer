@@ -2,7 +2,12 @@
 #define IR_RECEIVER_H
 
 #include <Arduino.h>
+
+#ifdef RECEIVER_MODE
+#include "receiver_config.h"
+#else
 #include "config.h"
+#endif
 
 // Функции для работы с ИК приемниками
 void initIRReceivers();

@@ -4,7 +4,7 @@
 
 #include <Arduino.h>
 
-String getHTMLContent();
-String getWifiSettingsContent();
+String generateHTMLContent();
+String formatTimestamp(unsigned long timestamp);
 
 #endif

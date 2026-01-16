@@ -19,4 +19,10 @@ void resetMeasurements();
 void handleWiFiSettings();
 void handleUpdateWiFi();
 
+// Функции для получения телеметрии излучателя (только для режима приемника)
+#ifdef RECEIVER_MODE
+int getTransmitterBatteryLevel();
+float getTransmitterBatteryVoltage();
+#endif
+
 #endif

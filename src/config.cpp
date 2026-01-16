@@ -7,8 +7,18 @@
 Preferences preferences;
 
 // Определения с инициализацией
-char ssid[32] = "MG";
-char password[64] = "25031991";
+#ifdef TRANSMITTER_MODE
+  char ssid[32] = "SFMTimer";
+ char password[64] = "123456789";
+#else
+  #ifdef RECEIVER_MODE
+    char ssid[32] = "SFMTimer";
+    char password[64] = "123456789";
+  #else
+    char ssid[32] = "MG";
+    char password[64] = "25031991";
+  #endif
+#endif
 const int serverPort = 80;
 
 void loadWiFiSettings() {

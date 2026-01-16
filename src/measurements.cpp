@@ -8,6 +8,10 @@
 #include "../include/ir_receiver.h"
 #endif
 
+#ifdef RECEIVER_MODE
+#include "../include/web_handlers.h"  // для доступа к телеметрии излучателя
+#endif
+
 // Инициализация переменных
 Mode currentMode = SPEEDOMETER;
 float distance = 3.0;

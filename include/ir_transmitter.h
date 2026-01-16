@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+#ifdef TRANSMITTER_MODE
+#include "transmitter_config.h"
+#else
 // Определения пинов для ИК передатчиков
 #define IR_TX1_PIN 13  // Пин для управления первым ИК передатчиком
 #define IR_TX2_PIN 12  // Пин для управления вторым ИК передатчиком
@@ -12,6 +15,7 @@
 #define PWM_CHANNEL_1 0  // Канал ШИМ для первого передатчика
 #define PWM_CHANNEL_2 1  // Канал ШИМ для второго передатчика
 #define PWM_RESOLUTION 10 // Разрешение ШИМ (10 бит = 0-1023)
+#endif
 
 void initIRTransmitters();
 void enableIRTransmitter1(bool enable);

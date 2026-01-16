@@ -28,6 +28,7 @@ void saveWiFiSettings();
 
 #define SENSOR1_PIN 14
 #define SENSOR2_PIN 27
+
 #define DEBOUNCE_TIME 1.0 * 1000000 // задержка от срабатывания датчиков пересечения 1сек
 #define MIN_LAP_TIME 1.0 * 1000000
 #define HISTORY_SIZE 5
