@@ -14,7 +14,6 @@ html, body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--primary-color);
-    overflow: hidden; /* Prevents bouncing on mobile */   
 }
 
 body {
@@ -23,6 +22,32 @@ body {
     justify-content: center;
     align-items: center;
     text-align: center;
+}
+
+.header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    box-sizing: border-box;
+}
+
+.battery-status {
+    display: flex;
+    gap: 15px;
+}
+
+.mode-selector-container select {
+    background-color: var(--container-bg);
+    color: var(--primary-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 0.9rem;
 }
 
 .timer-container {

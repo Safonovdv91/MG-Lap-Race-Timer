@@ -95,6 +95,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateData, 300);
 });
 
+function changeMode(mode) {
+    fetch(`/api/v1/mode?m=${mode}`)
+        .then(() => {
+            location.reload();
+        })
+        .catch(err => console.error('Error changing mode:', err));
+}
+
 function resetMeasurements() {
     fetch('/api/v1/reset', { method: 'POST' })
         .then(() => {

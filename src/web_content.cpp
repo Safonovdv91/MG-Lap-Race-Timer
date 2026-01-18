@@ -26,11 +26,22 @@ String generateHTMLContent() {
 
   // Header for battery info
   html += "<div class=\"header\">";
+  html += "<div class=\"battery-status\">";
   #ifdef RECEIVER_MODE
     int txBatteryLevel = getTransmitterBatteryLevel();
     html += "<div class=\"battery-info tx\">TX: " + (txBatteryLevel >= 0 ? String(txBatteryLevel) + "%" : "---") + "</div>";
   #endif
   html += "<div class=\"battery-info rx\">RX: " + String(batteryPercentage) + "%</div>";
+  html += "</div>";
+
+  html += "<div class=\"mode-selector-container\">";
+  html += "<select id=\"mode-select\" onchange=\"changeMode(this.value)\">";
+  html += "<option value=\"0\"" + String(currentMode == SPEEDOMETER ? " selected" : "") + ">Speedometer</option>";
+  html += "<option value=\"1\"" + String(currentMode == LAP_TIMER ? " selected" : "") + ">Lap Timer</option>";
+  html += "<option value=\"2\"" + String(currentMode == RACE_TIMER ? " selected" : "") + ">Race Timer</option>";
+  html += "</select>";
+  html += "</div>";
+
   html += "</div>";
 
   // Main timer container
