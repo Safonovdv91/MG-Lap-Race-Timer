@@ -1,161 +1,124 @@
+:root {
+    --bg-color: #121212;
+    --primary-color: #FFFFFF;
+    --secondary-color: #BBBBBB;
+    --accent-color: #03DAC6;
+    --container-bg: #1E1E1E;
+    --status-go-color: #87CEFA; /* Light Sky Blue */
+    --status-lap-color: #FFA500; /* Orange */
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    overflow: hidden; /* Prevents bouncing on mobile */   
+}
+
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 20px;
-  background-color: #f5f5f5;
-}
-
-.container {
-  max-width: 600px;
-  margin: 0 auto;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-.controls {
-  margin: 20px 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.display {
-  text-align: center;
-  margin: 30px 0;
-}
-
-.main-value {
-  font-size: 4rem;
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-.unit {
-  font-size: 1.5rem;
-  color: #7f8c8d;
-}
-
-.history {
-  margin-top: 30px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-th {
-  background-color: #f2f2f2;
-}
-
-button, select, input {
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-button {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #2980b9;
-}
-
-.distance-control {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-#distanceInput {
-  width: 60px;
-}
-
-@media (max-width: 480px) {
-  .main-value {
-    font-size: 3rem;
-  }
-
-  .controls {
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
-  }
-}
-.distance-control button {
-  padding: 8px 12px;
-  min-width: 50px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
-.distance-control button:first-child {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+.timer-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-grow: 1;
 }
 
-.distance-control button:nth-child(3) {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  margin-right: 5px;
+.timer-display {
+    font-size: 18vw; /* Responsive font size based on viewport width */
+    font-weight: 700; /* Bold font weight */
+    letter-spacing: 2px;
+    color: var(--primary-color);
+    margin: 0;
+    line-height: 1;
 }
 
-.distance-control button:active {
-  transform: scale(0.95);
-  transition: transform 0.1s;
+.timer-subtitle {
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: var(--secondary-color);
+    margin-top: 10px;
+    transition: color 0.3s ease;
 }
 
-.active-measurement {
-  color: #e74c3c;
-  animation: pulse 0.5s infinite alternate;
+.timer-subtitle.status-go {
+    color: var(--status-go-color);
+    font-weight: 500;
 }
 
-@keyframes pulse {
-  from { opacity: 1; }
-  to { opacity: 0.7; }
+.timer-subtitle.status-last-lap {
+    color: var(--status-lap-color);
+    font-weight: 500;
 }
 
-.history table strong {
-  font-weight: bold;
-  color: #2c3e50;
+
+.controls, .history, .footer {
+    width: 90%;
+    max-width: 400px;
+    margin-bottom: 20px;
 }
 
-#valueDisplay {
-  font-family: 'Courier New', monospace; /* Для правильного отображения цифр */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
 }
 
-/* Добавить в раздел <style> */
-.sensor-status {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
-  font-size: 1.2em;
+.history-table th, .history-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #333;
 }
 
-.sensor-status span {
-  padding: 5px 10px;
-  border-radius: 5px;
-  background-color: #f0f0f0;
+.history-table th {
+    color: var(--secondary-color);
+    font-weight: 400;
 }
 
-.sensor-active {
-  background-color: #4CAF50 !important;
-  color: white;
-  animation: blink 1s infinite;
+.button {
+    background-color: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 10px;
 }
 
-@keyframes blink {
-  0% {opacity: 1;}
-  50% {opacity: 0.7;}
-  100% {opacity: 1;}
+.footer a {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+/* Landscape mode for mobile */
+@media (orientation: landscape) and (max-height: 500px) {
+    .controls, .history, .footer, .header {
+        display: none;
+    }
+
+    .timer-container {
+        height: 100vh;
+        width: 100vw;
+        padding: 0;
+        margin: 0;
+    }
+
+    .timer-display {
+        font-size: 25vh; /* Responsive font size based on viewport height */
+    }
+
+    .timer-subtitle {
+        font-size: 4vh;
+    }
 }

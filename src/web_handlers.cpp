@@ -100,7 +100,7 @@ void handleData() {
   }
   
   // Добавляем время гонки, если в соответствующем режиме
-  if(currentMode == RACE_TIMER) {
+  if(currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
     unsigned long long raceTime = getCurrentRaceTimeSafe();
     unsigned long long startTimeVal = getStartTimeSafe();
     bool sensor1Trig = getSensor1TriggeredSafe();
@@ -155,7 +155,7 @@ void handleCSS() {
     }
   } else {
     // Отправляем стандартный CSS, если файл не найден
-    String css = "body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#f0f0f0}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:10px;background:white;border-radius:5px}.container{background:white;padding:20px;border-radius:5px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}.control-section{margin-bottom:20px;display:flex;flex-wrap:wrap;gap:15px;align-items:end}.display-section{text-align:center;margin:20px 0}.measurement-display{display:inline-block;background:#4CAF50;color:white;padding:20px;font-size:3em;border-radius:10px}.sensor-indicators{margin-top:20px}.sensor-indicator{display:inline-block;margin:0 10px;padding:10px;background:#e0e0e0;border-radius:5px}.status.active{color:#4CAF50}.history-section{margin:20px 0}.history-table{width:100%;border-collapse:collapse;margin-top:10px}.history-table th,.history-table td{padding:8px;text-align:left;border-bottom:1px solid #ddd}.history-table th{background-color:#f2f2f2}";
+    String css = "";
     server.send(200, "text/css", css);
   }
 }
@@ -171,7 +171,7 @@ void handleJS() {
     }
   } else {
     // Отправляем стандартный JS, если файл не найден
-    String js = "function updateData(){fetch('/api/v1/data').then(response=>response.json()).then(data=>{document.getElementById('measurement-display').innerHTML='<div class=\"value\">'+data.value.toFixed(1)+'</div><div class=\"unit\">'+data.unit+'</div>';document.getElementById('sensor1-indicator').innerHTML='Датчик 1: <span class=\"status \"+(data.sensor1_active?'active':'')+'\">'+(data.sensor1_active?'АКТИВЕН':'ОТСУТСТВУЕТ')+'</span>';document.getElementById('sensor2-indicator').innerHTML='Датчик 2: <span class=\"status \"+(data.sensor2_active?'active':'')+'\">'+(data.sensor2_active?'АКТИВЕН':'ОТСУТСТВУЕТ')+'</span>';let batteryInfo=document.querySelector('.battery-info');batteryInfo.innerHTML='ESP32: '+data.battery+'%';if(data.tx_battery!==undefined){let txBatteryInfo=document.createElement('div');txBatteryInfo.className='battery-info';txBatteryInfo.innerHTML='TX: '+(data.tx_battery>=0?data.tx_battery+'%':'---');let header=document.querySelector('.header');header.appendChild(txBatteryInfo);}}).catch(err=>console.error('Ошибка:',err));}setInterval(updateData,500);function changeMode(mode){fetch('/api/v1/mode?m='+mode).then(()=>location.reload());}function changeDistance(dist){fetch('/api/v1/distance?d='+dist).then(()=>location.reload());}function resetMeasurements(){fetch('/api/v1/reset',{method:'POST'}).then(()=>location.reload());}";
+    String js = "";
     server.send(200, "application/javascript", js);
   }
 }

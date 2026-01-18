@@ -69,6 +69,10 @@ void setup() {
   server.on("/style.css", handleCSS);
   server.on("/script.js", handleJS);
 
+  server.onNotFound([]() {
+    server.send(404, "text/plain", "Not found");
+  });
+
   server.begin();
   
   // Инициализация UDP

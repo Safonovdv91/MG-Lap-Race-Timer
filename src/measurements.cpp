@@ -13,7 +13,7 @@
 #endif
 
 // Инициализация переменных
-Mode currentMode = SPEEDOMETER;
+Mode currentMode = LAP_TIMER;
 float distance = 3.0;
 
 Measurement speedHistory[HISTORY_SIZE];
