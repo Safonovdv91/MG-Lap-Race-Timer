@@ -50,9 +50,13 @@ void handleRoot() {
   server.send(200, "text/html", html);
 }
 
+// Global JSON document to avoid heap fragmentation
+StaticJsonDocument<1024> doc;
+
 void handleData() {
-  DynamicJsonDocument doc(1024);
-  
+  // Clear the document before use
+  doc.clear();
+
   // Добавляем базовые данные
   doc["mode"] = currentMode;
   doc["distance"] = distance;
@@ -112,6 +116,7 @@ void handleData() {
     }
   }
   
+  // Serialize to a string and send
   String jsonString;
   serializeJson(doc, jsonString);
   server.send(200, "application/json", jsonString);
@@ -199,20 +204,13 @@ void handleWiFiSettings() {
   html += "<div class=\"container\">";
   html += "<h2>Настройки Wi-Fi</h2>";
   html += "<form action=\"/updatewifi\" method=\"post\">";
-  html += "<div class=\"form-group\">";
-  html += "<label for=\"ssid\">SSID:</label>";
-  html += "<input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"" + String(ssid) + "\">";
-  html += "</div>";
-  html += "<div class=\"form-group\">";
- html += "<label for=\"password\">Пароль:</label>";
- html += "<input type=\"password\" id=\"password\" name=\"password\" value=\"" + String(password) + "\">";
- html += "</div>";
- html += "<button type=\"submit\">Сохранить</button>";
- html += "</form>";
- html += "<a href=\"/\">Назад</a>";
- html += "</div>";
- html += "</body></html>";
- server.send(200, "text/html", html);
+  html += "<div class=\"form-group\"><label for=\"ssid\">SSID:</label>";
+  html += "<input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"" + String(ssid) + "\"></div>";
+  html += "<div class=\"form-group\"><label for=\"password\">Пароль:</label>";
+  html += "<input type=\"password\" id=\"password\" name=\"password\" value=\"" + String(password) + "\"></div>";
+  html += "<button type=\"submit\">Сохранить</button></form>";
+  html += "<a href=\"/\">Назад</a></div></body></html>";
+  server.send(200, "text/html", html);
 }
 
 void handleUpdateWiFi() {
