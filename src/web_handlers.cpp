@@ -46,9 +46,39 @@ extern bool getSensor2TriggeredSafe();
 extern bool getMeasurementReadySafe();
 extern bool getMeasurementInProgressSafe();
 
+// Helper function to send HTML file with placeholder replacement
+void sendHtml(String path, std::function<void(String&)> replacer) {
+  if (SPIFFS.exists(path)) {
+    File file = SPIFFS.open(path, "r");
+    if (file) {
+      String html = file.readString();
+      file.close();
+      replacer(html);
+      server.send(200, "text/html", html);
+    } else {
+      server.send(500, "text/plain", "File open failed");
+    }
+  } else {
+    server.send(404, "text/plain", "File not found");
+  }
+}
+
 void handleRoot() {
-  String html = generateHTMLContent();
-  server.send(200, "text/html", html);
+  sendHtml("/index.html", [](String& html) {
+    String options = "";
+    options += "<option value=\"0\"" + String(currentMode == SPEEDOMETER ? " selected" : "") + ">Speedometer</option>";
+    options += "<option value=\"1\"" + String(currentMode == LAP_TIMER ? " selected" : "") + ">Lap Timer</option>";
+    options += "<option value=\"2\"" + String(currentMode == RACE_TIMER ? " selected" : "") + ">Race Timer</option>";
+    html.replace("{{MODE_OPTIONS}}", options);
+
+    String battery_status = "";
+    #ifdef RECEIVER_MODE
+      int txBatteryLevel = getTransmitterBatteryLevel();
+      battery_status += "<div class=\"battery-info tx\">TX: " + (txBatteryLevel >= 0 ? String(txBatteryLevel) + "%" : "---") + "</div>";
+    #endif
+    battery_status += "<div class=\"battery-info rx\">RX: " + String(batteryPercentage) + "%</div>";
+    html.replace("{{BATTERY_STATUS}}", battery_status);
+  });
 }
 
 // Global JSON document to avoid heap fragmentation
@@ -193,19 +223,10 @@ void resetMeasurements() {
 }
 
 void handleWiFiSettings() {
-  String html = "<!DOCTYPE html><html><head><title>Настройки Wi-Fi</title>";
-  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-  html += "<link rel=\"stylesheet\" href=\"/style.css\"></head><body>";
-  html += "<div class=\"container\">";
-  html += "<h2>Настройки Wi-Fi</h2>";
-  html += "<form action=\"/updatewifi\" method=\"post\">";
-  html += "<div class=\"form-group\"><label for=\"ssid\">SSID:</label>";
-  html += "<input type=\"text\" id=\"ssid\" name=\"ssid\" value=\"" + String(ssid) + "\"></div>";
-  html += "<div class=\"form-group\"><label for=\"password\">Пароль:</label>";
-  html += "<input type=\"password\" id=\"password\" name=\"password\" value=\"" + String(password) + "\"></div>";
-  html += "<button type=\"submit\">Сохранить</button></form>";
-  html += "<a href=\"/\">Назад</a></div></body></html>";
-  server.send(200, "text/html", html);
+  sendHtml("/wifi_settings.html", [](String& html) {
+    html.replace("{{WIFI_SSID}}", String(ssid));
+    html.replace("{{WIFI_PASSWORD}}", String(password));
+  });
 }
 
 void handleUpdateWiFi() {

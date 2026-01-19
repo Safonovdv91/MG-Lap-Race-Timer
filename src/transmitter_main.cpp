@@ -21,15 +21,22 @@ void setup() {
   WiFi.mode(WIFI_STA); // Работаем в режиме станции
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   
-  while (WiFi.status() != WL_CONNECTED) {
+  int retries = 0;
+  while (WiFi.status() != WL_CONNECTED && retries < 20) {
     delay(500);
     Serial.print(".");
+    retries++;
   }
   
-  Serial.println("");
-  Serial.println("Wi-Fi подключен");
-  Serial.print("IP адрес: ");
-  Serial.println(WiFi.localIP());
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("");
+    Serial.println("Wi-Fi подключен");
+    Serial.print("IP адрес: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("");
+    Serial.println("Не удалось подключиться к Wi-Fi. Работа в автономном режиме.");
+  }
   
   // Инициализация UDP
   udp.begin(UDP_PORT);

@@ -48,6 +48,12 @@ void IRAM_ATTR handleSensor2();
 void updateSensorDisplay();
 void updateRaceTimer();
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
+
+extern volatile unsigned long lastSensor1PulseTime;
+
 // Функции для безопасного получения значений
 unsigned long long getStartTimeSafe();
 unsigned long long getCurrentRaceTimeSafe();

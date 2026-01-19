@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SFMgTimer</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="header">
+        <div class="battery-status">
+            {{BATTERY_STATUS}}
+        </div>
+        <div class="mode-selector-container">
+            <select id="mode-select" onchange="changeMode(this.value)">
+                {{MODE_OPTIONS}}
+            </select>
+        </div>
+    </div>
+
+    <div class="timer-container">
+        <h1 class="timer-display" id="timer-display">00:00.000</h1>
+        <p class="timer-subtitle" id="timer-subtitle">ready to go</p>
+    </div>
+
+    <div class="controls">
+        <button class="button" onclick="resetMeasurements()">Reset</button>
+    </div>
+
+    <div class="history">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Lap</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <a href="/wifisettings">Wi-Fi Settings</a>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

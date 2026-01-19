@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wi-Fi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Settings Wi-Fi</h2>
+        <form action="/updatewifi" method="post">
+            <div class="form-group">
+                <label for="ssid">SSID:</label>
+                <input type="text" id="ssid" name="ssid" value="{{WIFI_SSID}}">
+            </div>
+            <div class="form-group">
+                <label for="password">New Wi-Fi password:</label>
+                <input type="password" id="password" name="password" value="{{WIFI_PASSWORD}}">
+            </div>
+            <button type="submit">Save</button>
+        </form>
+        <a href="/">Back</a>
+    </div>
+</body>
+</html>
