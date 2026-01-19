@@ -33,13 +33,11 @@ void setup() {
   
   // Настройка пинов датчиков как входы для ИК приемников
   pinMode(SENSOR1_PIN, INPUT_PULLUP);
-  pinMode(SENSOR2_PIN, INPUT_PULLUP);
   
   // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
   // При пересечении луча на пинах будет HIGH (нет сигнала)
   // Поэтому используем прерывание по RISING (по положительному фронту)
   attachInterrupt(digitalPinToInterrupt(SENSOR1_PIN), handleSensor1, RISING);
-  attachInterrupt(digitalPinToInterrupt(SENSOR2_PIN), handleSensor2, RISING);
   
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS Mount Failed. Formatting...");
@@ -49,14 +47,13 @@ void setup() {
   loadWiFiSettings();
 
   WiFi.softAP(WIFI_SSID, WIFI_PASSWORD);
-  IPAddress IP = WiFi.softAPIP();
   // Настройка DNS для перенаправления всех запросов
   dnsServer.start(53, "*", WiFi.softAPIP());
   // Установка имени хоста
   WiFi.setHostname("chrono.mg");
 
   Serial.print("AP IP address: ");
-  Serial.println(IP);
+  Serial.println(WiFi.softAPIP());
 
   server.on("/api/v1/data", handleData);
   server.on("/api/v1/reset", handleReset);
@@ -88,7 +85,6 @@ void loop() {
   
   // Обновление состояния измерений
   processMeasurements();
-  updateSensorDisplay(); // состояние датчиков
 }
 
 void handleUDPPackets() {

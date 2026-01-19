@@ -39,10 +39,7 @@ float getTransmitterBatteryVoltage() {
 #endif
 
 // Объявление внешних функций из measurements.cpp
-extern unsigned long long getStartTimeSafe();
 extern unsigned long long getCurrentRaceTimeSafe();
-extern bool getSensor1TriggeredSafe();
-extern bool getSensor2TriggeredSafe();
 extern bool getMeasurementReadySafe();
 extern bool getMeasurementInProgressSafe();
 
@@ -108,10 +105,6 @@ void handleData() {
   } else {
     doc["unit"] = "s";
   }
-  
-  // Добавляем статус датчиков
-  doc["sensor1_active"] = sensor1Active;
-  doc["sensor2_active"] = sensor2Active;
   
   // Добавляем историю измерений
   JsonArray history = doc.createNestedArray("history");

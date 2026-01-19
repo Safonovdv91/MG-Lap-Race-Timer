@@ -26,17 +26,14 @@ volatile bool measurementInProgress = false;
 
 // Timestamps for the last received IR pulse for each sensor
 volatile unsigned long lastSensor1PulseTime = 0;
-volatile unsigned long lastSensor2PulseTime = 0;
 
 // State tracking for beam break detection
 bool beam1Broken = false;
-bool beam2Broken = false;
 
 // Display & UI variables
 volatile unsigned long long currentRaceTime = 0;
 volatile float currentValue = 0.0;
 bool sensor1Active = false;
-bool sensor2Active = false;
 
 // Battery measurement variables
 float batteryVoltage = 0.0;
@@ -48,12 +45,6 @@ unsigned long lastBatteryRead = 0;
 void IRAM_ATTR handleSensor1() {
   portENTER_CRITICAL_ISR(&timerMux);
   lastSensor1PulseTime = micros();
-  portEXIT_CRITICAL_ISR(&timerMux);
-}
-
-void IRAM_ATTR handleSensor2() {
-  portENTER_CRITICAL_ISR(&timerMux);
-  lastSensor2PulseTime = micros();
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
@@ -124,9 +115,6 @@ void processMeasurements() {
     beam1Broken = false;
   }
 
-  // --- SENSOR 2 TRIGGER LOGIC (for Speedometer) ---
-  // ... (omitted for brevity, remains the same)
-
   // --- DATA PROCESSING ---
   portENTER_CRITICAL(&timerMux);
   bool isMeasurementReady = measurementReady;
@@ -187,8 +175,6 @@ void processMeasurements() {
 }
 
 // --- Unused Functions (can be removed or left for future use) ---
-void updateSensorDisplay() {}
-void updateRaceTimer() {}
 
 // --- Safe Accessor Functions ---
 unsigned long long getStartTimeSafe() {
@@ -209,10 +195,6 @@ unsigned long long getCurrentRaceTimeSafe() {
 
 bool getSensor1TriggeredSafe() {
   return beam1Broken;
-}
-
-bool getSensor2TriggeredSafe() {
-  return beam2Broken;
 }
 
 bool getMeasurementReadySafe() {

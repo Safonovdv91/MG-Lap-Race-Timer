@@ -27,28 +27,15 @@ void saveWiFiSettings();
 //     GPIO34-39 — только входные пины (без подтяжки), но безопасны для датчиков.
 
 #define SENSOR1_PIN 14
-#define SENSOR2_PIN 27
 
 
 #define MIN_LAP_TIME 1.0 * 1000000
 #define HISTORY_SIZE 5
 #define DATA_UPDATE_INTERVAL 300 // Интервал обновления данных (мс)
 
-#endif
-
-// Светодиоды
-#define STATUS_LED_PIN 2     // Встроенный светодиод (или другой пин)
-#define MEASUREMENT_LED_PIN 4 // Пин для светодиода измерений
-#define LED_BLINK_INTERVAL 2000 // Интервал моргания 2 секунды
-#define LED_BLINK_DURATION 500  // Длительность моргания 0.5 секунды
-
 // измерение напряжения
 #define BATTERY_PIN 34
 #define BATTERY_MIN_V 3.0  // Минимальное напряжение (0%)
 #define BATTERY_MAX_V 4.2  // Максимальное напряжение (100%)
 
-// Добавляем определения для ИК передатчиков
-#ifdef USE_IR_SENSORS
-#define IR_TX1_PIN 13  // Пин для управления первым ИК передатчиком
-#define IR_TX2_PIN 12  // Пин для управления вторым ИК передатчиком
 #endif
