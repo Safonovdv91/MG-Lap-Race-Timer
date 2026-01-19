@@ -44,6 +44,7 @@ extern unsigned long long getCurrentRaceTimeSafe();
 extern bool getSensor1TriggeredSafe();
 extern bool getSensor2TriggeredSafe();
 extern bool getMeasurementReadySafe();
+extern bool getMeasurementInProgressSafe();
 
 void handleRoot() {
   String html = generateHTMLContent();
@@ -104,15 +105,11 @@ void handleData() {
   }
   
   // Добавляем время гонки, если в соответствующем режиме
-  if(currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
-    unsigned long long raceTime = getCurrentRaceTimeSafe();
-    unsigned long long startTimeVal = getStartTimeSafe();
-    bool sensor1Trig = getSensor1TriggeredSafe();
-    
-    if(sensor1Trig && startTimeVal > 0) {
-      unsigned long long currentTime = micros();
-      double elapsed = (currentTime - startTimeVal) / 1000000.0;
-      doc["race_time"] = elapsed;
+  if (currentMode == RACE_TIMER || currentMode == LAP_TIMER) {
+    if (getMeasurementInProgressSafe()) {
+      doc["race_time"] = getCurrentRaceTimeSafe() / 1000000.0;
+    } else {
+      doc["race_time"] = 0;
     }
   }
   

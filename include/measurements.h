@@ -54,6 +54,7 @@ unsigned long long getCurrentRaceTimeSafe();
 bool getSensor1TriggeredSafe();
 bool getSensor2TriggeredSafe();
 bool getMeasurementReadySafe();
+bool getMeasurementInProgressSafe();
 
 // Добавляем объявление мьютекса для синхронизации
 #include <freertos/FreeRTOS.h>

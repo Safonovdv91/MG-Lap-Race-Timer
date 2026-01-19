@@ -194,3 +194,7 @@ bool getSensor2TriggeredSafe() {
 bool getMeasurementReadySafe() {
   return measurementReady;
 }
+
+bool getMeasurementInProgressSafe() {
+  return measurementInProgress;
+}
