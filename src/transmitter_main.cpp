@@ -36,20 +36,38 @@ void setup() {
 }
 
 unsigned long lastBeaconTime = 0;
+unsigned long lastIRPulseTime = 0;
+bool isIRPulseOn = false;
+
+#define IR_PULSE_ON_DURATION 10  // ms
+#define IR_PULSE_OFF_DURATION 40 // ms
 
 void loop() {
   unsigned long currentTime = millis();
+
+  // --- IR Signal Modulation ---
+  if (isIRPulseOn) {
+    if (currentTime - lastIRPulseTime >= IR_PULSE_ON_DURATION) {
+      setIRPower(0); // Turn IR off
+      isIRPulseOn = false;
+      lastIRPulseTime = currentTime;
+    }
+  } else {
+    if (currentTime - lastIRPulseTime >= IR_PULSE_OFF_DURATION) {
+      setIRPower(50); // Turn IR on (50% duty cycle)
+      isIRPulseOn = true;
+      lastIRPulseTime = currentTime;
+    }
+  }
   
-  // Отправка beacon сообщения каждые BEACON_INTERVAL миллисекунд
+  // --- Telemetry ---
   if (currentTime - lastBeaconTime > BEACON_INTERVAL) {
     sendTelemetry();
     lastBeaconTime = currentTime;
   }
   
-  // Обработка UDP пакетов (опционально)
+  // --- UDP Handling ---
   handleUDPPackets();
-  
-  delay(10);
 }
 
 void sendTelemetry() {

@@ -186,8 +186,6 @@ void resetMeasurements() {
   currentValue = 0.0;
   startTime = 0;
   endTime = 0;
-  sensor1Triggered = false;
-  sensor2Triggered = false;
   measurementReady = false;
   measurementInProgress = false;
   

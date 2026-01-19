@@ -27,8 +27,10 @@ extern int historyIndex;
 extern volatile unsigned long long startTime;
 extern volatile unsigned long long endTime;
 
-extern volatile bool sensor1Triggered;
-extern volatile bool sensor2Triggered;
+// Timestamps for the last received IR pulse for each sensor
+extern volatile unsigned long lastSensor1PulseTime;
+extern volatile unsigned long lastSensor2PulseTime;
+
 extern volatile bool measurementReady;
 extern volatile bool measurementInProgress;
 
