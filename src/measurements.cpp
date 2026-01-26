@@ -1,6 +1,7 @@
 #include "measurements.h"
 #include "config.h"
 #include "receiver_config.h"
+#include "websocket_handlers.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -83,9 +84,10 @@ void processMeasurements() {
     portENTER_CRITICAL(&timerMux);
     timerStatus = STATUS_READY;
     measurementInProgress = false;
-    startTime = 0;
-    endTime = 0;
+    // startTime = 0; // Keep value for display until next run
+    // endTime = 0;
     portEXIT_CRITICAL(&timerMux);
+    ws_broadcast_data(); // Broadcast state change
   }
 
   unsigned long currentTime = micros();
@@ -101,6 +103,7 @@ void processMeasurements() {
   // --- SENSOR 1 TRIGGER LOGIC (State-dependent) ---
   if (isBeam1CurrentlyBroken && !beam1Broken) {
     beam1Broken = true;
+    bool should_broadcast = false;
 
     portENTER_CRITICAL(&timerMux);
     if (timerStatus == STATUS_READY) {
@@ -109,16 +112,21 @@ void processMeasurements() {
       measurementInProgress = true;
       timerStatus = STATUS_RUNNING;
       Serial.println("Таймер запущен!");
-
+      should_broadcast = true;
     } else if (timerStatus == STATUS_RUNNING) {
       // STOP timer
       if (currentTime - startTime > MIN_LAP_TIME) {
         endTime = currentTime;
         measurementReady = true;
+        // Broadcast will happen in the DATA PROCESSING block
       }
     }
     // In STATUS_DISPLAY, we do nothing.
     portEXIT_CRITICAL(&timerMux);
+
+    if (should_broadcast) {
+      ws_broadcast_data(); // Broadcast state change
+    }
 
   } else if (!isBeam1CurrentlyBroken) {
     beam1Broken = false;
@@ -164,11 +172,19 @@ void processMeasurements() {
       }
       // Note: measurementInProgress remains true during display
       portEXIT_CRITICAL(&timerMux);
+      ws_broadcast_data(); // Broadcast final lap data
     }
 
     portENTER_CRITICAL(&timerMux);
     measurementReady = false; // Mark as processed
     portEXIT_CRITICAL(&timerMux);
+  }
+
+  // --- LIVE RACE TIMER BROADCAST ---
+  static unsigned long lastWsBroadcastTime = 0;
+  if (timerStatus == STATUS_RUNNING && millis() - lastWsBroadcastTime > 100) {
+    ws_broadcast_data();
+    lastWsBroadcastTime = millis();
   }
 
   // --- LIVE RACE TIMER FOR UI AND SERIAL ---

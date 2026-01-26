@@ -8,6 +8,7 @@
 #include "../include/receiver_config.h"
 #include "../include/ir_receiver.h"
 #include "../include/web_handlers.h"
+#include "../include/websocket_handlers.h"
 
 // Объявление функций
 void handleUDPPackets();
@@ -55,7 +56,7 @@ void setup() {
   Serial.print("AP IP address: ");
   Serial.println(WiFi.softAPIP());
 
-  server.on("/api/v1/data", handleData);
+  // server.on("/api/v1/data", handleData); // Replaced by WebSockets
   server.on("/api/v1/reset", handleReset);
   server.on("/api/v1/mode", HTTP_GET, handleMode);
   server.on("/api/v1/distance", HTTP_GET, handleDistance);
@@ -72,11 +73,15 @@ void setup() {
 
   server.begin();
   
+  // Инициализация WebSocket
+  ws_init();
+
   // Инициализация UDP
   udp.begin(UDP_PORT);
 }
 
 void loop() {
+  ws_loop(); // Обработка WebSocket
   server.handleClient();
   dnsServer.processNextRequest(); // Обработка DNS запросов
   
