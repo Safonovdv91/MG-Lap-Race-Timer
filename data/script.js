@@ -49,16 +49,30 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/v1/data')
             .then(response => response.json())
             .then(data => {
-                if (data.race_time > 0) {
+                const status = data.timer_status || 'ready';
+                const statusIndicator = document.getElementById('timer-status');
+                statusIndicator.className = 'status-' + status;
+
+                // Update main timer display based on state
+                if (status === 'running') {
                     startLocalTimer(data.race_time);
-                } else {
+                    timerSubtitle.textContent = 'GO';
+                    timerSubtitle.className = 'timer-subtitle status-go';
+                } else { // Covers 'ready' and 'display'
                     stopLocalTimer();
+                    
+                    // Keep showing the last lap time if it exists
                     if (data.value > 0) {
                         timerDisplay.textContent = formatTime(data.value);
-                        timerSubtitle.textContent = 'last lap';
-                        timerSubtitle.className = 'timer-subtitle status-last-lap';
                     } else {
                         timerDisplay.textContent = "00:00.000";
+                    }
+
+                    // Update subtitle based on the specific state
+                    if (status === 'display') {
+                        timerSubtitle.textContent = 'last lap';
+                        timerSubtitle.className = 'timer-subtitle status-last-lap';
+                    } else { // ready
                         timerSubtitle.textContent = 'ready to go';
                         timerSubtitle.className = 'timer-subtitle';
                     }

@@ -5,6 +5,7 @@
 #include "config.h"
 
 enum Mode { SPEEDOMETER, LAP_TIMER, RACE_TIMER };
+enum TimerStatus { STATUS_READY, STATUS_RUNNING, STATUS_DISPLAY };
 
 extern Mode currentMode;
 extern float distance;
@@ -47,6 +48,7 @@ unsigned long long getCurrentRaceTimeSafe();
 bool getSensor1TriggeredSafe();
 bool getMeasurementReadySafe();
 bool getMeasurementInProgressSafe();
+TimerStatus getTimerStatus();
 
 // Добавляем объявление мьютекса для синхронизации
 #include <freertos/FreeRTOS.h>

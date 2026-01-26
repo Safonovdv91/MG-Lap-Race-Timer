@@ -86,6 +86,27 @@ body {
     font-weight: 500;
 }
 
+#timer-status {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    transition: background-color 0.3s ease;
+}
+
+.status-ready {
+    background-color: #28a745; /* Green */
+}
+
+.status-running {
+    background-color: transparent;
+}
+
+.status-display {
+    background-color: #ffc107; /* Orange */
+}
+
+
 
 .controls, .history, .footer {
     width: 90%;

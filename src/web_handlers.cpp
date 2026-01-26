@@ -42,6 +42,7 @@ float getTransmitterBatteryVoltage() {
 extern unsigned long long getCurrentRaceTimeSafe();
 extern bool getMeasurementReadySafe();
 extern bool getMeasurementInProgressSafe();
+extern TimerStatus getTimerStatus();
 
 // Helper function to send HTML file with placeholder replacement
 void sendHtml(String path, std::function<void(String&)> replacer) {
@@ -91,6 +92,20 @@ void handleData() {
   doc["value"] = currentValue;
   doc["battery"] = batteryPercentage;
   doc["voltage"] = batteryVoltage;
+  
+  // Add timer status
+  TimerStatus status = getTimerStatus();
+  switch(status) {
+    case STATUS_READY:
+      doc["timer_status"] = "ready";
+      break;
+    case STATUS_RUNNING:
+      doc["timer_status"] = "running";
+      break;
+    case STATUS_DISPLAY:
+      doc["timer_status"] = "display";
+      break;
+  }
   
   // Добавляем информацию о телеметрии излучателя (только в режиме приемника)
   #ifdef RECEIVER_MODE

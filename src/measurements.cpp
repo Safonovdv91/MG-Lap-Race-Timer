@@ -1,5 +1,6 @@
 #include "measurements.h"
 #include "config.h"
+#include "receiver_config.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -13,6 +14,10 @@ static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 // --- Global Variables ---
 Mode currentMode = LAP_TIMER;
 float distance = 3.0;
+
+// Timer State Machine
+volatile TimerStatus timerStatus = STATUS_READY;
+volatile unsigned long displayStartTime = 0;
 
 Measurement speedHistory[HISTORY_SIZE];
 Measurement lapHistory[HISTORY_SIZE];
@@ -73,6 +78,16 @@ void addToHistory(Measurement history[], float value) {
 void processMeasurements() {
   readBattery();
 
+  // --- State Machine: Cooldown Check ---
+  if (timerStatus == STATUS_DISPLAY && millis() - displayStartTime > TIMER_COOLDOWN_PERIOD) {
+    portENTER_CRITICAL(&timerMux);
+    timerStatus = STATUS_READY;
+    measurementInProgress = false;
+    startTime = 0;
+    endTime = 0;
+    portEXIT_CRITICAL(&timerMux);
+  }
+
   unsigned long currentTime = micros();
   unsigned long pulseTime;
 
@@ -80,37 +95,31 @@ void processMeasurements() {
   pulseTime = lastSensor1PulseTime;
   portEXIT_CRITICAL(&timerMux);
 
-  bool isBeam1CurrentlyBroken = (currentTime - pulseTime) > 100000; // 100ms threshold
-
-  // Update sensor active status for UI
+  bool isBeam1CurrentlyBroken = (currentTime - pulseTime) > 10000; // 10ms threshold
   sensor1Active = isBeam1CurrentlyBroken;
 
-  // --- SENSOR 1 TRIGGER LOGIC ---
-  if (isBeam1CurrentlyBroken && !beam1Broken) { // Beam 1 was just broken (rising edge of broken state)
+  // --- SENSOR 1 TRIGGER LOGIC (State-dependent) ---
+  if (isBeam1CurrentlyBroken && !beam1Broken) {
     beam1Broken = true;
 
-    if (currentMode == LAP_TIMER || currentMode == RACE_TIMER) {
-      portENTER_CRITICAL(&timerMux);
-      if (!measurementInProgress) {
-        startTime = currentTime;
-        measurementInProgress = true;
-        Serial.println("Таймер запущен!");
-      } else {
-        if (currentTime - startTime > MIN_LAP_TIME) {
-          endTime = currentTime;
-          measurementReady = true;
-        }
+    portENTER_CRITICAL(&timerMux);
+    if (timerStatus == STATUS_READY) {
+      // START timer
+      startTime = currentTime;
+      measurementInProgress = true;
+      timerStatus = STATUS_RUNNING;
+      Serial.println("Таймер запущен!");
+
+    } else if (timerStatus == STATUS_RUNNING) {
+      // STOP timer
+      if (currentTime - startTime > MIN_LAP_TIME) {
+        endTime = currentTime;
+        measurementReady = true;
       }
-      portEXIT_CRITICAL(&timerMux);
-    } else if (currentMode == SPEEDOMETER) {
-      portENTER_CRITICAL(&timerMux);
-      if (!measurementInProgress) {
-        startTime = currentTime;
-        measurementInProgress = true;
-        Serial.println("Таймер запущен!");
-      }
-      portEXIT_CRITICAL(&timerMux);
     }
+    // In STATUS_DISPLAY, we do nothing.
+    portEXIT_CRITICAL(&timerMux);
+
   } else if (!isBeam1CurrentlyBroken) {
     beam1Broken = false;
   }
@@ -121,46 +130,55 @@ void processMeasurements() {
   portEXIT_CRITICAL(&timerMux);
 
   if (isMeasurementReady) {
-    unsigned long long duration;
-    portENTER_CRITICAL(&timerMux);
-    duration = endTime - startTime;
-    portEXIT_CRITICAL(&timerMux);
+    unsigned long long duration = endTime - startTime;
 
     if (currentMode == SPEEDOMETER) {
+      // This mode is not affected by the new state machine in the same way
+      // For now, we process it simply.
       if (duration > 0) {
         currentValue = (distance / (duration / 1000000.0)) * 3.6;
-        Serial.print("Скорость: ");
-        Serial.print(currentValue);
-        Serial.println(" км/ч");
       } else {
         currentValue = 0.0;
       }
       addToHistory(speedHistory, currentValue);
+      // Reset for next speed measurement
+      portENTER_CRITICAL(&timerMux);
+      measurementInProgress = false;
+      startTime = 0;
+      portEXIT_CRITICAL(&timerMux);
+
     } else { // LAP_TIMER and RACE_TIMER
       currentValue = duration / 1000000.0;
       Serial.print("Время круга: ");
       Serial.print(currentValue, 3);
       Serial.println(" с");
       addToHistory(lapHistory, currentValue);
+
+      // --- Enter Display State ---
+      portENTER_CRITICAL(&timerMux);
+      timerStatus = STATUS_DISPLAY;
+      displayStartTime = millis();
+      
+      if (currentMode == RACE_TIMER) {
+        startTime = endTime; // For race timer, next lap starts from this end time
+      }
+      // Note: measurementInProgress remains true during display
+      portEXIT_CRITICAL(&timerMux);
     }
 
     portENTER_CRITICAL(&timerMux);
-    measurementReady = false;
-    if (currentMode != RACE_TIMER) {
-      measurementInProgress = false;
-      startTime = 0;
-    } else {
-      startTime = endTime;
-    }
-    endTime = 0;
+    measurementReady = false; // Mark as processed
     portEXIT_CRITICAL(&timerMux);
   }
 
   // --- LIVE RACE TIMER FOR UI AND SERIAL ---
   static unsigned long lastSerialPrintTime = 0;
+  
   portENTER_CRITICAL(&timerMux);
-  if (measurementInProgress) {
+  if (timerStatus == STATUS_RUNNING) {
     currentRaceTime = micros() - startTime;
+  } else if (timerStatus == STATUS_DISPLAY) {
+    currentRaceTime = endTime - startTime; // Show final time
   } else {
     currentRaceTime = 0;
   }
@@ -211,4 +229,12 @@ bool getMeasurementInProgressSafe() {
   value = measurementInProgress;
   portEXIT_CRITICAL(&timerMux);
   return value;
+}
+
+TimerStatus getTimerStatus() {
+  TimerStatus status;
+  portENTER_CRITICAL(&timerMux);
+  status = timerStatus;
+  portEXIT_CRITICAL(&timerMux);
+  return status;
 }

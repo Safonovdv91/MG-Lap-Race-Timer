@@ -46,8 +46,8 @@ unsigned long lastBeaconTime = 0;
 unsigned long lastIRPulseTime = 0;
 bool isIRPulseOn = false;
 
-#define IR_PULSE_ON_DURATION 10  // ms
-#define IR_PULSE_OFF_DURATION 40 // ms
+#define IR_PULSE_ON_DURATION 2  // ms
+#define IR_PULSE_OFF_DURATION 3 // ms
 
 void loop() {
   unsigned long currentTime = millis();

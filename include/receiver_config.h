@@ -9,6 +9,7 @@
 #define SENSOR2_PIN 27
 #define DEBOUNCE_TIME 1.0 * 1000000 // задержка от срабатывания датчиков пересечения 1сек
 #define MIN_LAP_TIME 1.0 * 1000000
+#define TIMER_COOLDOWN_PERIOD 5000 // 5 seconds cooldown
 
 // Параметры Wi-Fi
 #define WIFI_SSID "SFMTimer"
