@@ -1,7 +1,9 @@
 #include "measurements.h"
 #include "config.h"
 #include "receiver_config.h"
+#ifdef RECEIVER_MODE
 #include "websocket_handlers.h"
+#endif
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -13,8 +15,10 @@ static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 #endif
 
 // --- Global Variables ---
+#ifdef RECEIVER_MODE
 Mode currentMode = LAP_TIMER;
 float distance = 3.0;
+#endif
 
 // Timer State Machine
 volatile TimerStatus timerStatus = STATUS_READY;
@@ -59,7 +63,7 @@ void IRAM_ATTR handleSensor1() {
 void readBattery() {
   if (millis() - lastBatteryRead > 5000) { // Read every 5 seconds
     int raw = analogRead(BATTERY_PIN);
-    batteryVoltage = (raw * 3.3 / 4095.0) * 2;
+    batteryVoltage = (raw * ADC_REFERENCE_VOLTAGE / ADC_MAX_READING) * ((VOLTAGE_DIVIDER_R1 + VOLTAGE_DIVIDER_R2) / VOLTAGE_DIVIDER_R2);
     batteryPercentage = constrain(map(batteryVoltage * 100, BATTERY_MIN_V * 100, BATTERY_MAX_V * 100, 0, 100), 0, 100);
     lastBatteryRead = millis();
   }
@@ -87,7 +91,9 @@ void processMeasurements() {
     // startTime = 0; // Keep value for display until next run
     // endTime = 0;
     portEXIT_CRITICAL(&timerMux);
+#ifdef RECEIVER_MODE
     ws_broadcast_data(); // Broadcast state change
+#endif
   }
 
   unsigned long currentTime = micros();
@@ -125,7 +131,9 @@ void processMeasurements() {
     portEXIT_CRITICAL(&timerMux);
 
     if (should_broadcast) {
+#ifdef RECEIVER_MODE
       ws_broadcast_data(); // Broadcast state change
+#endif
     }
 
   } else if (!isBeam1CurrentlyBroken) {
@@ -172,7 +180,9 @@ void processMeasurements() {
       }
       // Note: measurementInProgress remains true during display
       portEXIT_CRITICAL(&timerMux);
+#ifdef RECEIVER_MODE
       ws_broadcast_data(); // Broadcast final lap data
+#endif
     }
 
     portENTER_CRITICAL(&timerMux);
@@ -183,7 +193,9 @@ void processMeasurements() {
   // --- LIVE RACE TIMER BROADCAST ---
   static unsigned long lastWsBroadcastTime = 0;
   if (timerStatus == STATUS_RUNNING && millis() - lastWsBroadcastTime > 100) {
+#ifdef RECEIVER_MODE
     ws_broadcast_data();
+#endif
     lastWsBroadcastTime = millis();
   }
 
