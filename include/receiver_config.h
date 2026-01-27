@@ -21,7 +21,9 @@
 // Светодиоды
 #define STATUS_LED_PIN 2     // Встроенный светодиод (или другой пин)
 #define MEASUREMENT_LED_PIN 4 // Пин для светодиода измерений
-#define LED_BLINK_INTERVAL 2000 // Интервал моргания 2 секунды
-#define LED_BLINK_DURATION 500  // Длительность моргания 0.5 секунды
+#define OPERATION_MODE_LED_PIN 33 // Пин для светодиода режима работы
+#define LED_BLINK_INTERVAL 3000 // Интервал моргания 2 секунды
+#define LED_BLINK_DURATION 100  // Длительность моргания 0.1 секунды
+#define FAST_BLINK_INTERVAL 100 // Интервал быстрого моргания
 
 #endif

@@ -266,3 +266,11 @@ TimerStatus getTimerStatus() {
   portEXIT_CRITICAL(&timerMux);
   return status;
 }
+
+unsigned long getDisplayStartTimeSafe() {
+  unsigned long value;
+  portENTER_CRITICAL(&timerMux);
+  value = displayStartTime;
+  portEXIT_CRITICAL(&timerMux);
+  return value;
+}

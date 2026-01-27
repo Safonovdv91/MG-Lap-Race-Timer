@@ -49,6 +49,7 @@ bool getSensor1TriggeredSafe();
 bool getMeasurementReadySafe();
 bool getMeasurementInProgressSafe();
 TimerStatus getTimerStatus();
+unsigned long getDisplayStartTimeSafe();
 
 // Добавляем объявление мьютекса для синхронизации
 #include <freertos/FreeRTOS.h>

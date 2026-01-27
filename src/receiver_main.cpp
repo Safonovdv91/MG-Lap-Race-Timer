@@ -9,9 +9,11 @@
 #include "../include/ir_receiver.h"
 #include "../include/web_handlers.h"
 #include "../include/websocket_handlers.h"
+#include "../include/measurements.h"
 
 // Объявление функций
 void handleUDPPackets();
+void updateOperationLed();
 
 // Объявление сервера, определенного в web_handlers.cpp
 extern WebServer server;
@@ -35,6 +37,9 @@ void setup() {
   // Настройка пинов датчиков как входы для ИК приемников
   pinMode(SENSOR1_PIN, INPUT_PULLUP);
   
+  // Настройка пина светодиода режима работы
+  pinMode(OPERATION_MODE_LED_PIN, OUTPUT);
+
   // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
   // При пересечении луча на пинах будет HIGH (нет сигнала)
   // Поэтому используем прерывание по RISING (по положительному фронту)
@@ -90,6 +95,9 @@ void loop() {
   
   // Обновление состояния измерений
   processMeasurements();
+
+  // Обновление светодиода режима работы
+  updateOperationLed();
 }
 
 void handleUDPPackets() {
@@ -107,6 +115,64 @@ void handleUDPPackets() {
                     transmitterData.batteryLevel, transmitterData.batteryVoltage);
     }
   }
+}
+
+void updateOperationLed() {
+    static unsigned long lastBlinkTime = 0;
+    static bool ledState = false; // false = OFF, true = ON
+    static TimerStatus lastStatus = STATUS_READY;
+
+    TimerStatus currentStatus = getTimerStatus();
+
+    // Reset state machine on status change
+    if (currentStatus != lastStatus) {
+        lastBlinkTime = 0; // Reset blink timer
+        ledState = false; // Default to OFF
+        digitalWrite(OPERATION_MODE_LED_PIN, LOW);
+        lastStatus = currentStatus;
+    }
+
+    unsigned long currentTime = millis();
+
+    switch (currentStatus) {
+        case STATUS_READY:
+            // Normal blink: 
+            if (ledState && (currentTime - lastBlinkTime >= LED_BLINK_DURATION)) {
+                ledState = false;
+                digitalWrite(OPERATION_MODE_LED_PIN, LOW);
+                lastBlinkTime = currentTime;
+            } else if (!ledState && (currentTime - lastBlinkTime >= (unsigned long)LED_BLINK_INTERVAL - LED_BLINK_DURATION)) {
+                ledState = true;
+                digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
+                lastBlinkTime = currentTime;
+            }
+            break;
+
+        case STATUS_RUNNING:
+            // Fast blink for the first second (MIN_LAP_TIME is in microseconds)
+            if (getCurrentRaceTimeSafe() < MIN_LAP_TIME) {
+                if (currentTime - lastBlinkTime >= FAST_BLINK_INTERVAL) {
+                    ledState = !ledState;
+                    digitalWrite(OPERATION_MODE_LED_PIN, ledState ? HIGH : LOW);
+                    lastBlinkTime = currentTime;
+                }
+            } else {
+                // After the first second, keep the LED solid ON to indicate the timer is running.
+                if (!ledState) {
+                    digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
+                    ledState = true;
+                }
+            }
+            break;
+
+        case STATUS_DISPLAY:
+            // Solid ON during cooldown/display period
+            if (!ledState) {
+                digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
+                ledState = true;
+            }
+            break;
+    }
 }
 
 // Функции для получения телеметрии излучателя определены в web_handlers.cpp
