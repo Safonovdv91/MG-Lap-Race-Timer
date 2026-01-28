@@ -3,6 +3,7 @@
 #include "config.h"
 #include "web_handlers.h" // To get transmitter data
 #include <ArduinoJson.h>
+#include "web_content.h"
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -80,14 +81,17 @@ void ws_broadcast_data() {
   }
 
   JsonArray history = ws_doc.createNestedArray("history");
+  
+  lockMeasurements();
   Measurement* history_source = (currentMode == SPEEDOMETER) ? speedHistory : lapHistory;
   for(int i = 0; i < HISTORY_SIZE && i < historyIndex; i++) {
     if(history_source[i].value > 0) {
       JsonObject histObj = history.createNestedObject();
       histObj["value"] = history_source[i].value;
-      histObj["timestamp"] = formatTimestamp(history_source[i].timestamp);
+      formatAndSetTimestamp(histObj, "timestamp", history_source[i].timestamp);
     }
   }
+  unlockMeasurements();
 
   if (getMeasurementInProgressSafe() || getTimerStatus() == STATUS_DISPLAY) {
       ws_doc["race_time"] = getCurrentRaceTimeSafe() / 1000000.0;
@@ -95,7 +99,8 @@ void ws_broadcast_data() {
       ws_doc["race_time"] = 0;
   }
 
-  String jsonString;
-  serializeJson(ws_doc, jsonString);
-  webSocket.broadcastTXT(jsonString);
+  // Serialize to a static buffer to avoid heap fragmentation from String objects
+  char buffer[1024];
+  size_t len = serializeJson(ws_doc, buffer);
+  webSocket.broadcastTXT(buffer, len);
 }

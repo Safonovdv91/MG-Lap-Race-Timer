@@ -64,12 +64,20 @@ void readBattery() {
   if (millis() - lastBatteryRead > 5000) { // Read every 5 seconds
     int raw = analogRead(BATTERY_PIN);
     batteryVoltage = (raw * ADC_REFERENCE_VOLTAGE / ADC_MAX_READING) * ((VOLTAGE_DIVIDER_R1 + VOLTAGE_DIVIDER_R2) / VOLTAGE_DIVIDER_R2);
+    
     batteryPercentage = constrain(map(batteryVoltage * 100, BATTERY_MIN_V * 100, BATTERY_MAX_V * 100, 0, 100), 0, 100);
     lastBatteryRead = millis();
+    Serial.print("Значения батареи: ");
+    Serial.print("U: [");
+    Serial.print(batteryVoltage);
+    Serial.print(" V ] percents: [");
+    Serial.print(batteryPercentage);
+    Serial.println(" %]");
   }
 }
 
 void addToHistory(Measurement history[], float value) {
+  // This function assumes the caller has already acquired the timerMux lock
   if (historyIndex < HISTORY_SIZE) {
     history[historyIndex++] = {value, millis()};
   } else {
@@ -83,140 +91,117 @@ void addToHistory(Measurement history[], float value) {
 void processMeasurements() {
   readBattery();
 
-  // --- State Machine: Cooldown Check ---
-  if (timerStatus == STATUS_DISPLAY && millis() - displayStartTime > TIMER_COOLDOWN_PERIOD) {
-    portENTER_CRITICAL(&timerMux);
-    timerStatus = STATUS_READY;
-    measurementInProgress = false;
-    // startTime = 0; // Keep value for display until next run
-    // endTime = 0;
-    portEXIT_CRITICAL(&timerMux);
-#ifdef RECEIVER_MODE
-    ws_broadcast_data(); // Broadcast state change
-#endif
-  }
-
-  unsigned long currentTime = micros();
+  // --- Phase 1: Gather Inputs (outside lock) ---
+  unsigned long currentTime_ms = millis();
+  unsigned long currentTime_us = micros();
   unsigned long pulseTime;
 
+  // Atomically get the last pulse time
   portENTER_CRITICAL(&timerMux);
   pulseTime = lastSensor1PulseTime;
   portEXIT_CRITICAL(&timerMux);
 
-  bool isBeam1CurrentlyBroken = (currentTime - pulseTime) > 10000; // 10ms threshold
+  bool isBeam1CurrentlyBroken = (currentTime_us - pulseTime) > 10000; // 10ms threshold
   sensor1Active = isBeam1CurrentlyBroken;
 
-  // --- SENSOR 1 TRIGGER LOGIC (State-dependent) ---
+  // --- Phase 2: Process State Machine (inside a single critical section) ---
+  bool should_broadcast = false;
+  bool isLapFinished = false;
+
+  lockMeasurements(); // Enter critical section
+
+  // 1. Cooldown Check
+  if (timerStatus == STATUS_DISPLAY && (currentTime_ms - displayStartTime > TIMER_COOLDOWN_PERIOD)) {
+    timerStatus = STATUS_READY;
+    measurementInProgress = false;
+    should_broadcast = true;
+  }
+
+  // 2. Sensor Trigger Logic (State-dependent)
   if (isBeam1CurrentlyBroken && !beam1Broken) {
     beam1Broken = true;
-    bool should_broadcast = false;
-
-    portENTER_CRITICAL(&timerMux);
     if (timerStatus == STATUS_READY) {
       // START timer
-      startTime = currentTime;
+      startTime = currentTime_us;
       measurementInProgress = true;
       timerStatus = STATUS_RUNNING;
-      Serial.println("Таймер запущен!");
+      currentRaceTime = 0;
       should_broadcast = true;
     } else if (timerStatus == STATUS_RUNNING) {
       // STOP timer
-      if (currentTime - startTime > MIN_LAP_TIME) {
-        endTime = currentTime;
-        measurementReady = true;
-        // Broadcast will happen in the DATA PROCESSING block
+      if (currentTime_us - startTime > MIN_LAP_TIME) {
+        endTime = currentTime_us;
+        measurementReady = true; // Flag that a lap is ready for processing
       }
     }
-    // In STATUS_DISPLAY, we do nothing.
-    portEXIT_CRITICAL(&timerMux);
-
-    if (should_broadcast) {
-#ifdef RECEIVER_MODE
-      ws_broadcast_data(); // Broadcast state change
-#endif
-    }
-
+    // In STATUS_DISPLAY, we do nothing on a new trigger.
   } else if (!isBeam1CurrentlyBroken) {
     beam1Broken = false;
   }
 
-  // --- DATA PROCESSING ---
-  portENTER_CRITICAL(&timerMux);
-  bool isMeasurementReady = measurementReady;
-  portEXIT_CRITICAL(&timerMux);
-
-  if (isMeasurementReady) {
+  // 3. Data Processing (if a lap was finished in the previous step)
+  if (measurementReady) {
     unsigned long long duration = endTime - startTime;
 
     if (currentMode == SPEEDOMETER) {
-      // This mode is not affected by the new state machine in the same way
-      // For now, we process it simply.
-      if (duration > 0) {
-        currentValue = (distance / (duration / 1000000.0)) * 3.6;
-      } else {
-        currentValue = 0.0;
-      }
+      currentValue = (duration > 0) ? (distance / (duration / 1000000.0)) * 3.6 : 0.0;
       addToHistory(speedHistory, currentValue);
-      // Reset for next speed measurement
-      portENTER_CRITICAL(&timerMux);
       measurementInProgress = false;
       startTime = 0;
-      portEXIT_CRITICAL(&timerMux);
-
     } else { // LAP_TIMER and RACE_TIMER
       currentValue = duration / 1000000.0;
-      Serial.print("Время круга: ");
-      Serial.print(currentValue, 3);
-      Serial.println(" с");
+      isLapFinished = true; // Flag for serial print outside lock
       addToHistory(lapHistory, currentValue);
 
-      // --- Enter Display State ---
-      portENTER_CRITICAL(&timerMux);
+      // Enter Display State
       timerStatus = STATUS_DISPLAY;
-      displayStartTime = millis();
+      displayStartTime = currentTime_ms;
       
       if (currentMode == RACE_TIMER) {
         startTime = endTime; // For race timer, next lap starts from this end time
       }
-      // Note: measurementInProgress remains true during display
-      portEXIT_CRITICAL(&timerMux);
-#ifdef RECEIVER_MODE
-      ws_broadcast_data(); // Broadcast final lap data
-#endif
     }
-
-    portENTER_CRITICAL(&timerMux);
+    
     measurementReady = false; // Mark as processed
-    portEXIT_CRITICAL(&timerMux);
+    should_broadcast = true;
   }
 
-  // --- LIVE RACE TIMER BROADCAST ---
-  static unsigned long lastWsBroadcastTime = 0;
-  if (timerStatus == STATUS_RUNNING && millis() - lastWsBroadcastTime > 100) {
-#ifdef RECEIVER_MODE
-    ws_broadcast_data();
-#endif
-    lastWsBroadcastTime = millis();
-  }
-
-  // --- LIVE RACE TIMER FOR UI AND SERIAL ---
-  static unsigned long lastSerialPrintTime = 0;
-  
-  portENTER_CRITICAL(&timerMux);
+  // 4. Update Live Race Timer
   if (timerStatus == STATUS_RUNNING) {
-    currentRaceTime = micros() - startTime;
+    currentRaceTime = currentTime_us - startTime;
   } else if (timerStatus == STATUS_DISPLAY) {
     currentRaceTime = endTime - startTime; // Show final time
   } else {
     currentRaceTime = 0;
   }
-  portEXIT_CRITICAL(&timerMux);
 
-  if (measurementInProgress && millis() - lastSerialPrintTime > 1000) {
+  unlockMeasurements(); // Exit critical section
+
+  // --- Phase 3: Perform Side-Effects (outside lock) ---
+  
+  // 1. Broadcast data via WebSocket if needed
+  static unsigned long lastWsBroadcastTime = 0;
+  if (should_broadcast || (timerStatus == STATUS_RUNNING && (currentTime_ms - lastWsBroadcastTime > 100))) {
+    #ifdef RECEIVER_MODE
+      ws_broadcast_data();
+    #endif
+    lastWsBroadcastTime = currentTime_ms;
+  }
+
+  // 2. Print final lap time to Serial
+  if (isLapFinished) {
+    Serial.print("Время круга: ");
+    Serial.print(currentValue, 3);
+    Serial.println(" с");
+  }
+
+  // 3. Print live race time to Serial periodically
+  static unsigned long lastSerialPrintTime = 0;
+  if (measurementInProgress && (currentTime_ms - lastSerialPrintTime > 1000)) {
     Serial.print("Текущее время: ");
     Serial.print(currentRaceTime / 1000000.0, 3);
     Serial.println(" с");
-    lastSerialPrintTime = millis();
+    lastSerialPrintTime = currentTime_ms;
   }
 }
 
@@ -240,7 +225,11 @@ unsigned long long getCurrentRaceTimeSafe() {
 }
 
 bool getSensor1TriggeredSafe() {
-  return beam1Broken;
+  bool value;
+  portENTER_CRITICAL(&timerMux);
+  value = beam1Broken;
+  portEXIT_CRITICAL(&timerMux);
+  return value;
 }
 
 bool getMeasurementReadySafe() {
@@ -273,4 +262,12 @@ unsigned long getDisplayStartTimeSafe() {
   value = displayStartTime;
   portEXIT_CRITICAL(&timerMux);
   return value;
+}
+
+void lockMeasurements() {
+  portENTER_CRITICAL(&timerMux);
+}
+
+void unlockMeasurements() {
+  portEXIT_CRITICAL(&timerMux);
 }

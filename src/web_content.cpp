@@ -48,12 +48,16 @@ extern float getTransmitterBatteryVoltage();
 
 
 
-String formatTimestamp(unsigned long timestamp) {
-  time_t rawtime = timestamp / 1000; // Преобразуем миллисекунды в секунды
-  struct tm *timeinfo = localtime(&rawtime);
-  
+void formatAndSetTimestamp(JsonObject obj, const char* key, unsigned long timestamp_ms) {
+  unsigned long seconds = timestamp_ms / 1000;
+  unsigned long minutes = seconds / 60;
+  unsigned long hours = minutes / 60;
+
+  seconds %= 60;
+  minutes %= 60;
+
   char buffer[9]; // HH:MM:SS + null terminator
-  strftime(buffer, sizeof(buffer), "%H:%M:%S", timeinfo);
+  snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes, seconds);
   
-  return String(buffer);
+  obj[key] = buffer; // ArduinoJson will copy the char array, no String object created
 }

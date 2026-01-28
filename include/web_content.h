@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
-String formatTimestamp(unsigned long timestamp);
+#include <ArduinoJson.h>
+
+void formatAndSetTimestamp(JsonObject obj, const char* key, unsigned long timestamp_ms);
 
 #endif
