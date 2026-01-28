@@ -63,10 +63,10 @@ void IRAM_ATTR handleSensor1() {
 void readBattery() {
   if (millis() - lastBatteryRead > 5000) { // Read every 5 seconds
     int raw = analogRead(BATTERY_PIN);
-    batteryVoltage = (raw * ADC_REFERENCE_VOLTAGE / ADC_MAX_READING) * ((VOLTAGE_DIVIDER_R1 + VOLTAGE_DIVIDER_R2) / VOLTAGE_DIVIDER_R2);
-    
+    batteryVoltage = (raw * ADC_REFERENCE_VOLTAGE / ADC_MAX_READING) * VOLTAGE_DIVIDER_MULTIPLIER;
     batteryPercentage = constrain(map(batteryVoltage * 100, BATTERY_MIN_V * 100, BATTERY_MAX_V * 100, 0, 100), 0, 100);
     lastBatteryRead = millis();
+    
     Serial.print("Значения батареи: ");
     Serial.print("U: [");
     Serial.print(batteryVoltage);

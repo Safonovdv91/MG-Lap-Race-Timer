@@ -37,10 +37,13 @@ void saveWiFiSettings();
 #define BATTERY_PIN 34
 #define BATTERY_MIN_V 3.0  // Минимальное напряжение (0%)
 #define BATTERY_MAX_V 4.2  // Максимальное напряжение (100%)
- // Настройки делителя напряжения для измерения батареи                                                                                                 │
-#define VOLTAGE_DIVIDER_R1 1000000.0 // 1 МОм                                                                                                          │
-#define VOLTAGE_DIVIDER_R2 300000.0 // 300 kОм                                                                                                         │
-// Характеристики АЦП ESP32                                                                                                                            │
-#define ADC_REFERENCE_VOLTAGE 3.3 // Опорное напряжение АЦП ESP32                                                                                      │
+ // Настройки делителя напряжения для измерения батареи, используем подстроечный делитель. 
+ // Calibrate: REAL_V(на батарее) / ADC_PIN_V (на АЦП) - формула рассчета  
+ //         |   Vin  |   Vcc  | ADC_PIN_V | coeff
+ // (USB)   |   5.00   | 4.72  |   2.49   |  1.895582
+ //         |   4.00   | 3.927 |   2.256  |  1.740691
+#define VOLTAGE_DIVIDER_MULTIPLIER 1.740691
+// Характеристики АЦП ESP32
+#define ADC_REFERENCE_VOLTAGE 3.3 // Опорное напряжение АЦП ESP32
 #define ADC_MAX_READING 4095.0    // Максимальное значение 12-битного АЦП   
 #endif
