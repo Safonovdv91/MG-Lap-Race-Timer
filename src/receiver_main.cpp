@@ -136,7 +136,7 @@ void updateOperationLed() {
 
     switch (currentStatus) {
         case STATUS_READY:
-            // Normal blink: 
+            // Normal blink: 0.3s on, 1.7s off
             if (ledState && (currentTime - lastBlinkTime >= LED_BLINK_DURATION)) {
                 ledState = false;
                 digitalWrite(OPERATION_MODE_LED_PIN, LOW);
@@ -166,13 +166,21 @@ void updateOperationLed() {
             break;
 
         case STATUS_DISPLAY:
-            // Solid ON during cooldown/display period
-            if (!ledState) {
-                digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
-                ledState = true;
+                 // Rapid blink for MIN_LAP_TIME duration, then solid ON for the rest of TIMER_COOLDOWN_PERIOD
+        if (currentTime - getDisplayStartTimeSafe() < (MIN_LAP_TIME / 1000)) { // MIN_LAP_TIME is in microseconds, convert to milliseconds 
+          if (currentTime - lastBlinkTime >= FAST_BLINK_INTERVAL) {
+            ledState = !ledState;
+            digitalWrite(OPERATION_MODE_LED_PIN, ledState ? HIGH : LOW);
+                lastBlinkTime = currentTime;
             }
-            break;
+          } else { 
+            // After MIN_LAP_TIME duration, keep the LED solid ON.                                                                                │
+            if (!ledState) {
+            digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
+            ledState = true;
+          }
+        }
+        break;
     }
-}
 
-// Функции для получения телеметрии излучателя определены в web_handlers.cpp
+}
