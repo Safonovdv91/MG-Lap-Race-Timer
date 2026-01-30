@@ -28,9 +28,7 @@ extern volatile bool measurementInProgress;
 extern volatile unsigned long long currentRaceTime; // Для режима отображения реального времени
 extern volatile float currentValue;
 
-// Переменные напряжения питания
-extern float batteryVoltage;
-extern int batteryPercentage;
+
 
 void addToHistory(Measurement history[], float value);
 void processMeasurements();

@@ -1,12 +1,13 @@
 #include "measurements.h"
 #include "config.h"
 #include "receiver_config.h"
+#include "battery/battery.h"
+
 #ifdef RECEIVER_MODE
 #include "websocket_handlers.h"
 #endif
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-
 // Define a critical section spinlock
 static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -45,11 +46,6 @@ volatile unsigned long long currentRaceTime = 0;
 volatile float currentValue = 0.0;
 bool sensor1Active = false;
 
-// Battery measurement variables
-float batteryVoltage = 0.0;
-int batteryPercentage = 0;
-unsigned long lastBatteryRead = 0;
-
 // --- Minimalistic Interrupt Service Routines ---
 
 void IRAM_ATTR handleSensor1() {
@@ -59,22 +55,6 @@ void IRAM_ATTR handleSensor1() {
 }
 
 // --- Core Logic ---
-
-void readBattery() {
-  if (millis() - lastBatteryRead > 5000) { // Read every 5 seconds
-    int raw = analogRead(BATTERY_PIN);
-    batteryVoltage = (raw * ADC_REFERENCE_VOLTAGE / ADC_MAX_READING) * VOLTAGE_DIVIDER_MULTIPLIER;
-    batteryPercentage = constrain(map(batteryVoltage * 100, BATTERY_MIN_V * 100, BATTERY_MAX_V * 100, 0, 100), 0, 100);
-    lastBatteryRead = millis();
-    
-    Serial.print("Значения батареи: ");
-    Serial.print("U: [");
-    Serial.print(batteryVoltage);
-    Serial.print(" V ] percents: [");
-    Serial.print(batteryPercentage);
-    Serial.println(" %]");
-  }
-}
 
 void addToHistory(Measurement history[], float value) {
   // This function assumes the caller has already acquired the timerMux lock

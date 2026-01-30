@@ -1,7 +1,10 @@
-#include "../include/web_handlers.h"
-#include "../include/config.h"
-#include "../include/measurements.h"
-#include "../include/web_content.h"
+#include "web_handlers.h"
+#include "config.h"
+#include "measurements.h"
+#include "web_content.h"
+
+#include "battery/battery.h" 
+
 #include <ArduinoJson.h>
 #include <FS.h>
 #include <SPIFFS.h>
@@ -14,8 +17,6 @@ extern float distance;
 extern Measurement speedHistory[HISTORY_SIZE];
 extern Measurement lapHistory[HISTORY_SIZE];
 extern int historyIndex;
-extern float batteryVoltage;
-extern int batteryPercentage;
 
 // Переменные для хранения данных излучателя (только для режима приемника)
 #ifdef RECEIVER_MODE
@@ -74,7 +75,8 @@ void handleRoot() {
       int txBatteryLevel = getTransmitterBatteryLevel();
       battery_status += "<div class=\"battery-info tx\">TX: " + (txBatteryLevel >= 0 ? String(txBatteryLevel) + "%" : "---") + "</div>";
     #endif
-    battery_status += "<div class=\"battery-info rx\">RX: " + String(batteryPercentage) + "%</div>";
+    battery_status += "<div class=\"battery-info rx\">RX: " + String(getBatteryPercentage()) + "%</div>";
+
     html.replace("{{BATTERY_STATUS}}", battery_status);
   });
 }

@@ -4,6 +4,7 @@
 #include "web_handlers.h" // To get transmitter data
 #include <ArduinoJson.h>
 #include "web_content.h"
+#include "battery/battery.h"
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -52,8 +53,8 @@ void ws_broadcast_data() {
   ws_doc["mode"] = currentMode;
   ws_doc["distance"] = distance;
   ws_doc["value"] = currentValue;
-  ws_doc["battery"] = batteryPercentage;
-  ws_doc["voltage"] = batteryVoltage;
+  ws_doc["battery"] = getBatteryPercentage();
+  ws_doc["voltage"] = getBatteryVoltage();
 
   TimerStatus status = getTimerStatus();
   switch(status) {
