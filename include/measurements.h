@@ -52,9 +52,4 @@ unsigned long getDisplayStartTimeSafe();
 void lockMeasurements();
 void unlockMeasurements();
 
-// Добавляем объявление мьютекса для синхронизации
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
-
-
 #endif

@@ -32,6 +32,7 @@ void saveWiFiSettings();
 #define MIN_LAP_TIME 1.0 * 1000000
 #define HISTORY_SIZE 5
 #define DATA_UPDATE_INTERVAL 300 // Интервал обновления данных (мс)
+#define BEAM_BREAK_THRESHOLD 40000 // Порог для обнаружения прерывания луча в микросекундах (40 мс)
 
 // измерение напряжения (
 // R1 (-) 1 MOm 

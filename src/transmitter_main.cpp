@@ -4,6 +4,7 @@
 
 #include "../include/transmitter_config.h"
 #include "../include/ir_transmitter.h"
+#include "battery/battery.h"
 
 WiFiUDP udp;
 
@@ -46,11 +47,14 @@ unsigned long lastBeaconTime = 0;
 unsigned long lastIRPulseTime = 0;
 bool isIRPulseOn = false;
 
-#define IR_PULSE_ON_DURATION 2  // ms
-#define IR_PULSE_OFF_DURATION 3 // ms
+#define IR_PULSE_ON_DURATION 5  // ms
+#define IR_PULSE_OFF_DURATION 16 // ms
 
 void loop() {
   unsigned long currentTime = millis();
+
+  // --- Battery Reading ---
+  readBattery();
 
   // --- IR Signal Modulation ---
   if (isIRPulseOn) {
@@ -78,11 +82,9 @@ void loop() {
 }
 
 void sendTelemetry() {
-  // Получение данных о состоянии
-  float battVoltage = analogRead(BATTERY_PIN) * 3.3 / 4095.0 * 2.0; // Предполагаем делитель 2:1
-  int batteryLevel = map(battVoltage * 100, BATTERY_MIN_V * 100, BATTERY_MAX_V * 100, 0, 100);
-  if (batteryLevel > 100) batteryLevel = 100;
-  if (batteryLevel < 0) batteryLevel = 0;
+  // Получение данных о состоянии из модуля батареи
+  float battVoltage = getBatteryVoltage();
+  int batteryLevel = getBatteryPercentage();
   
   // Формирование и отправка UDP пакета
   IPAddress receiverIP(192, 168, 4, 1); // IP адрес по умолчанию для AP режима

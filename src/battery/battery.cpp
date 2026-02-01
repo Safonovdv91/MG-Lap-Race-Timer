@@ -20,14 +20,18 @@ int calculateBatteryPercentage(float voltage) {
   if (voltage >= 3.55) return 10 + (voltage - 3.55) * 150;  // 10-25%
   if (voltage >= 3.45) return 5 + (voltage - 3.45) * 50;    // 5-10%
   if (voltage >= 3.35) return (voltage - 3.35) * 50;        // 0-5%
+  
+  return 0;
 }
 
 void readBattery() {
     if (millis() - lastBatteryRead > 500) {
         int raw = analogRead(BATTERY_PIN);
         float adcVoltage = (raw / ADC_MAX_READING) * ADC_REFERENCE_VOLTAGE;
+
         batteryVoltage = adcVoltage * VOLTAGE_DIVIDER_MULTIPLIER;
         batteryPercentage = calculateBatteryPercentage(batteryVoltage);
+        
         lastBatteryRead = millis();
     }
 }

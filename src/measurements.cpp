@@ -81,7 +81,7 @@ void processMeasurements() {
   pulseTime = lastSensor1PulseTime;
   portEXIT_CRITICAL(&timerMux);
 
-  bool isBeam1CurrentlyBroken = (currentTime_us - pulseTime) > 10000; // 10ms threshold
+  bool isBeam1CurrentlyBroken = (currentTime_us - pulseTime) > BEAM_BREAK_THRESHOLD;
   sensor1Active = isBeam1CurrentlyBroken;
 
   // --- Phase 2: Process State Machine (inside a single critical section) ---
