@@ -1,4 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Screen Wake Lock ---
+    let wakeLock = null;
+
+    const requestWakeLock = async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Screen Wake Lock is active');
+                
+                wakeLock.addEventListener('release', () => {
+                    console.log('Screen Wake Lock was released');
+                });
+            } catch (err) {
+                console.error(`Wake Lock Error: ${err.name}, ${err.message}`);
+            }
+        } else {
+            console.log('Wake Lock API not supported.');
+        }
+    };
+
+    // Request the lock when the page loads
+    requestWakeLock();
+
+    // Re-acquire the lock when the page becomes visible again
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestWakeLock();
+        }
+    });
+    // --- End Screen Wake Lock ---
+
     const timerDisplay = document.getElementById('timer-display');
     const timerSubtitle = document.getElementById('timer-subtitle');
     const historyBody = document.getElementById('history-body');
