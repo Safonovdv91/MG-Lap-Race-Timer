@@ -5,14 +5,10 @@
 #include <Arduino.h>
 
 // Пины для ИК передатчиков
-#define IR_TX1_PIN 13  // Пин для управления первым ИК передатчиком
-#define IR_TX2_PIN 12  // Пин для управления вторым ИК передатчиком
+#define IR_TX1_PIN 14  //D14 (GPIO14) Пин для управления первым ИК передатчиком
 
 // Частота ШИМ для модуляции ИК сигнала (38 кГц)
-#define IR_CARRIER_FREQ 38000
 #define PWM_CHANNEL_1 0  // Канал ШИМ для первого передатчика
-#define PWM_CHANNEL_2 1  // Канал ШИМ для второго передатчика
-#define PWM_RESOLUTION 10 // Разрешение ШИМ (10 бит = 0-1023)
 
 // Параметры Wi-Fi
 #define WIFI_SSID "SFMTimer"
@@ -26,5 +22,7 @@
 #define BATTERY_PIN 34
 #define BATTERY_MIN_V 3.0  // Минимальное напряжение (0%)
 #define BATTERY_MAX_V 4.2  // Максимальное напряжение (100%)
+
+void initIRTransmitters();
 
 #endif

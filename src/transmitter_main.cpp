@@ -2,8 +2,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-#include "../include/transmitter_config.h"
-#include "../include/ir_transmitter.h"
+#include "transmitter_config.h"
 #include "battery/battery.h"
 
 WiFiUDP udp;
@@ -15,7 +14,7 @@ void handleUDPPackets();
 void setup() {
   Serial.begin(115200);
   
-  // Инициализация ИК передатчиков
+  // Инициализация ИК передатчиков(Включен постоянно)
   initIRTransmitters();
   
   // Подключение к Wi-Fi сети
@@ -44,32 +43,14 @@ void setup() {
 }
 
 unsigned long lastBeaconTime = 0;
-unsigned long lastIRPulseTime = 0;
 bool isIRPulseOn = false;
 
-#define IR_PULSE_ON_DURATION 5  // ms
-#define IR_PULSE_OFF_DURATION 16 // ms
 
 void loop() {
   unsigned long currentTime = millis();
 
   // --- Battery Reading ---
   readBattery();
-
-  // --- IR Signal Modulation ---
-  if (isIRPulseOn) {
-    if (currentTime - lastIRPulseTime >= IR_PULSE_ON_DURATION) {
-      setIRPower(0); // Turn IR off
-      isIRPulseOn = false;
-      lastIRPulseTime = currentTime;
-    }
-  } else {
-    if (currentTime - lastIRPulseTime >= IR_PULSE_OFF_DURATION) {
-      setIRPower(50); // Turn IR on (50% duty cycle)
-      isIRPulseOn = true;
-      lastIRPulseTime = currentTime;
-    }
-  }
   
   // --- Telemetry ---
   if (currentTime - lastBeaconTime > BEACON_INTERVAL) {
