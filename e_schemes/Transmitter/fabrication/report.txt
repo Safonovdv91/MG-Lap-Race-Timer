@@ -1,0 +1,13 @@
+Предупреждение: Коррекция ширины ограничена.  Значение коррекции ширины должно быть в пределах [0,000001 mm; 0,199999 mm] для текущих правил проектирования.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-F_Cu.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-B_Cu.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-F_Paste.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-B_Paste.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-F_Silkscreen.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-B_Silkscreen.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-F_Mask.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-B_Mask.gbr'.
+Начерчено в '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-Edge_Cuts.gbr'.
+Создан файл Gerber Job '/home/dsafonov/Embeded/MG-Lap-Race-Timer/e_schemes/Transmitter/Transmitter-job.gbrjob'.
+Информация: Готово.
+Информация: Готово.
