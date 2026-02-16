@@ -5,11 +5,11 @@
 #include <SPIFFS.h>
 #include <DNSServer.h>
 
-#include "../include/receiver_config.h"
-#include "../include/ir_receiver.h"
-#include "../include/web_handlers.h"
-#include "../include/websocket_handlers.h"
-#include "../include/measurements.h"
+#include "receiver_config.h"
+#include "ir_receiver.h"
+#include "web_handlers.h"
+#include "websocket_handlers.h"
+#include "measurements.h"
 
 // Объявление функций
 void handleUDPPackets();
@@ -28,6 +28,7 @@ extern struct TransmitterTelemetry {
   unsigned long lastUpdate;
 } transmitterData;
 
+
 void setup() {
   Serial.begin(115200);
   
@@ -39,7 +40,9 @@ void setup() {
   
   // Настройка пина светодиода режима работы
   pinMode(OPERATION_MODE_LED_PIN, OUTPUT);
+  pinMode(STATUS_IR_LED_PIN, OUTPUT);
 
+  digitalWrite(STATUS_IR_LED_PIN, LOW);
   // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
   // При пересечении луча на пинах будет HIGH (нет сигнала)
   // Поэтому используем прерывание по RISING (по положительному фронту)
@@ -98,6 +101,8 @@ void loop() {
 
   // Обновление светодиода режима работы
   updateOperationLed();
+
+  handleStatusLED();
 }
 
 void handleUDPPackets() {

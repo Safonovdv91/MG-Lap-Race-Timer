@@ -35,6 +35,9 @@ volatile unsigned long long endTime = 0;
 volatile bool measurementReady = false;
 volatile bool measurementInProgress = false;
 
+// Добавьте volatile переменную для флага прерывания
+volatile bool sensor1Triggered = false;
+
 // Timestamps for the last received IR pulse for each sensor
 volatile unsigned long lastSensor1PulseTime = 0;
 
@@ -51,8 +54,30 @@ bool sensor1Active = false;
 void IRAM_ATTR handleSensor1() {
   portENTER_CRITICAL_ISR(&timerMux);
   lastSensor1PulseTime = micros();
+  sensor1Triggered = true;
   portEXIT_CRITICAL_ISR(&timerMux);
 }
+
+// Функция для управления статусным светодиодом
+void handleStatusLED() {
+  if (sensor1Triggered) {
+    digitalWrite(STATUS_IR_LED_PIN, HIGH);
+    sensor1Triggered = false; // Сбрасываем флаг
+    
+    // Опционально: выключить светодиод через некоторое время
+    // Если нужно, чтобы светодиод горел постоянно пока луч прерван - удалите этот таймер
+    static unsigned long ledOffTime = 0;
+    ledOffTime = millis() + 100; // Выключить через 100 мс
+  }
+  
+  // Если нужно автоматическое выключение светодиода
+  // static unsigned long lastMillis = 0;
+  // if (millis() > lastMillis && digitalRead(STATUS_IR_LED_PIN) == HIGH) {
+  //   digitalWrite(STATUS_IR_LED_PIN, LOW);
+  //   lastMillis = 0;
+  // }
+}
+
 
 // --- Core Logic ---
 

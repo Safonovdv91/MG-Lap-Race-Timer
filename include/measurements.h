@@ -3,6 +3,10 @@
 
 #include <Arduino.h>
 #include "config.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
+
 
 enum Mode { SPEEDOMETER, LAP_TIMER, RACE_TIMER };
 enum TimerStatus { STATUS_READY, STATUS_RUNNING, STATUS_DISPLAY };
@@ -28,15 +32,12 @@ extern volatile bool measurementInProgress;
 extern volatile unsigned long long currentRaceTime; // Для режима отображения реального времени
 extern volatile float currentValue;
 
-
-
 void addToHistory(Measurement history[], float value);
 void processMeasurements();
 void IRAM_ATTR handleSensor1();
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
+void handleStatusLED();
+
 
 extern volatile unsigned long lastSensor1PulseTime;
 
