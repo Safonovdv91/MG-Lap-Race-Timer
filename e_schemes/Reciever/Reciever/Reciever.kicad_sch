@@ -3590,10 +3590,6 @@
 		(uuid "5c5f973c-d64f-4e3c-976a-1bb647abc62f")
 	)
 	(no_connect
-		(at 215.9 95.25)
-		(uuid "691ecfb2-68c5-4dd8-b786-0dd3b92b7c6c")
-	)
-	(no_connect
 		(at 19.05 120.65)
 		(uuid "69e42f1a-be69-4ea0-a2a8-3b472132111e")
 	)
@@ -4847,13 +4843,13 @@
 	)
 	(wire
 		(pts
-			(xy 209.55 46.99) (xy 209.55 54.61)
+			(xy 215.9 95.25) (xy 209.55 95.25)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "c2aa8cf0-3a26-4c2e-bb9a-fda7550d6e72")
+		(uuid "c3bb35be-c897-4b55-a804-11776dfe4d41")
 	)
 	(wire
 		(pts
@@ -4884,6 +4880,16 @@
 			(type default)
 		)
 		(uuid "cbc5703b-1041-4d43-a961-0dd418cf42d3")
+	)
+	(wire
+		(pts
+			(xy 209.55 46.99) (xy 209.55 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ce878bc3-9a66-4d24-91f8-acee40da08b8")
 	)
 	(wire
 		(pts
@@ -5104,16 +5110,6 @@
 			(type default)
 		)
 		(uuid "ef9a0c62-ef0e-4ab2-a0d5-0f5857e090fe")
-	)
-	(wire
-		(pts
-			(xy 209.55 54.61) (xy 215.9 54.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f0f8b4ad-1849-48c7-ac32-98b5171f3667")
 	)
 	(wire
 		(pts
@@ -5646,28 +5642,28 @@
 			)
 		)
 		(pin "1"
-			(uuid "f97ee398-dad7-4dc3-93b3-a07b851a4d0d")
+			(uuid "f97ee398-dad7-4dc3-93b3-a07b851a4d0e")
 		)
 		(pin "7"
-			(uuid "c380b8fb-4ece-4cf4-9d56-7d989f3ffd40")
+			(uuid "c380b8fb-4ece-4cf4-9d56-7d989f3ffd41")
 		)
 		(pin "8"
-			(uuid "a4f8692e-0ba8-4de4-ade8-a2269b6f5cfb")
+			(uuid "a4f8692e-0ba8-4de4-ade8-a2269b6f5cfc")
 		)
 		(pin "2"
-			(uuid "5ab287e3-2880-41d3-ac04-668a70a4b29c")
+			(uuid "5ab287e3-2880-41d3-ac04-668a70a4b29d")
 		)
 		(pin "3"
-			(uuid "76b709ae-44fa-4a68-86cf-e2b1e57c05ce")
+			(uuid "76b709ae-44fa-4a68-86cf-e2b1e57c05cf")
 		)
 		(pin "5"
-			(uuid "4a96fea2-76ca-448c-bcc2-1b21efdf8441")
+			(uuid "4a96fea2-76ca-448c-bcc2-1b21efdf8442")
 		)
 		(pin "4"
-			(uuid "93595a2a-cd7d-484d-ad6d-38ba4fa3e5b7")
+			(uuid "93595a2a-cd7d-484d-ad6d-38ba4fa3e5b8")
 		)
 		(pin "6"
-			(uuid "974c5382-f539-429e-b2d5-e059a7645387")
+			(uuid "974c5382-f539-429e-b2d5-e059a7645388")
 		)
 		(instances
 			(project ""
@@ -6186,7 +6182,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "RF_Module:ESP32-WROOM-32E"
+		(property "Footprint" "RF_Module:ESP32-WROOM-32UE"
 			(at 214.63 48.26 0)
 			(effects
 				(font
@@ -7060,28 +7056,28 @@
 			)
 		)
 		(pin "1"
-			(uuid "f97ee398-dad7-4dc3-93b3-a07b851a4d0d")
+			(uuid "f97ee398-dad7-4dc3-93b3-a07b851a4d0f")
 		)
 		(pin "7"
-			(uuid "c380b8fb-4ece-4cf4-9d56-7d989f3ffd40")
+			(uuid "c380b8fb-4ece-4cf4-9d56-7d989f3ffd42")
 		)
 		(pin "8"
-			(uuid "a4f8692e-0ba8-4de4-ade8-a2269b6f5cfb")
+			(uuid "a4f8692e-0ba8-4de4-ade8-a2269b6f5cfd")
 		)
 		(pin "2"
-			(uuid "5ab287e3-2880-41d3-ac04-668a70a4b29c")
+			(uuid "5ab287e3-2880-41d3-ac04-668a70a4b29e")
 		)
 		(pin "3"
-			(uuid "76b709ae-44fa-4a68-86cf-e2b1e57c05ce")
+			(uuid "76b709ae-44fa-4a68-86cf-e2b1e57c05d0")
 		)
 		(pin "5"
-			(uuid "4a96fea2-76ca-448c-bcc2-1b21efdf8441")
+			(uuid "4a96fea2-76ca-448c-bcc2-1b21efdf8443")
 		)
 		(pin "4"
-			(uuid "93595a2a-cd7d-484d-ad6d-38ba4fa3e5b7")
+			(uuid "93595a2a-cd7d-484d-ad6d-38ba4fa3e5b9")
 		)
 		(pin "6"
-			(uuid "974c5382-f539-429e-b2d5-e059a7645387")
+			(uuid "974c5382-f539-429e-b2d5-e059a7645389")
 		)
 		(instances
 			(project ""
@@ -7952,7 +7948,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal"
 			(at 151.13 48.768 90)
 			(effects
 				(font
@@ -8486,7 +8482,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal"
 			(at 90.17 33.528 90)
 			(effects
 				(font
@@ -8950,7 +8946,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal"
 			(at 74.93 65.278 90)
 			(effects
 				(font
@@ -9443,28 +9439,28 @@
 			)
 		)
 		(pin "1"
-			(uuid "bce3cf02-fc74-402a-bb6c-a18031937d18")
+			(uuid "bce3cf02-fc74-402a-bb6c-a18031937d19")
 		)
 		(pin "5"
-			(uuid "840b4e46-e888-4578-a34d-eefbdb7743c3")
+			(uuid "840b4e46-e888-4578-a34d-eefbdb7743c4")
 		)
 		(pin "6"
-			(uuid "58ef7d78-2f07-4382-b7ed-320d95d0dea9")
+			(uuid "58ef7d78-2f07-4382-b7ed-320d95d0deaa")
 		)
 		(pin "7"
-			(uuid "06f2ce4a-9e34-4322-a6b4-413fd340687b")
+			(uuid "06f2ce4a-9e34-4322-a6b4-413fd340687c")
 		)
 		(pin "8"
-			(uuid "fab2be62-8bdf-4003-b028-f467721f1aad")
+			(uuid "fab2be62-8bdf-4003-b028-f467721f1aae")
 		)
 		(pin "4"
-			(uuid "48fd5edb-4b77-4789-905c-034a89da823d")
+			(uuid "48fd5edb-4b77-4789-905c-034a89da823e")
 		)
 		(pin "2"
-			(uuid "b0e45b37-81fd-42be-b77c-af2dd3cf75ca")
+			(uuid "b0e45b37-81fd-42be-b77c-af2dd3cf75cb")
 		)
 		(pin "3"
-			(uuid "2772294c-5600-4f92-9e5a-5adcca7ad0ac")
+			(uuid "2772294c-5600-4f92-9e5a-5adcca7ad0ad")
 		)
 		(instances
 			(project ""
@@ -9731,28 +9727,28 @@
 			)
 		)
 		(pin "1"
-			(uuid "bce3cf02-fc74-402a-bb6c-a18031937d18")
+			(uuid "bce3cf02-fc74-402a-bb6c-a18031937d1a")
 		)
 		(pin "5"
-			(uuid "840b4e46-e888-4578-a34d-eefbdb7743c3")
+			(uuid "840b4e46-e888-4578-a34d-eefbdb7743c5")
 		)
 		(pin "6"
-			(uuid "58ef7d78-2f07-4382-b7ed-320d95d0dea9")
+			(uuid "58ef7d78-2f07-4382-b7ed-320d95d0deab")
 		)
 		(pin "7"
-			(uuid "06f2ce4a-9e34-4322-a6b4-413fd340687b")
+			(uuid "06f2ce4a-9e34-4322-a6b4-413fd340687d")
 		)
 		(pin "8"
-			(uuid "fab2be62-8bdf-4003-b028-f467721f1aad")
+			(uuid "fab2be62-8bdf-4003-b028-f467721f1aaf")
 		)
 		(pin "4"
-			(uuid "48fd5edb-4b77-4789-905c-034a89da823d")
+			(uuid "48fd5edb-4b77-4789-905c-034a89da823f")
 		)
 		(pin "2"
-			(uuid "b0e45b37-81fd-42be-b77c-af2dd3cf75ca")
+			(uuid "b0e45b37-81fd-42be-b77c-af2dd3cf75cc")
 		)
 		(pin "3"
-			(uuid "2772294c-5600-4f92-9e5a-5adcca7ad0ac")
+			(uuid "2772294c-5600-4f92-9e5a-5adcca7ad0ae")
 		)
 		(instances
 			(project ""
@@ -9926,7 +9922,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal"
 			(at 113.538 36.83 90)
 			(effects
 				(font
@@ -10273,7 +10269,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal"
 			(at 46.99 65.278 90)
 			(effects
 				(font
