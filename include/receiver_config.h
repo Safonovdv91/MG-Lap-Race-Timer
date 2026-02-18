@@ -5,8 +5,8 @@
 #include <Arduino.h>
 
 // Пины для ИК приемников
-#define SENSOR1_PIN 14
-#define SENSOR2_PIN 27
+#define SENSOR1_PIN 13
+
 #define DEBOUNCE_TIME 1.0 * 1000000 // задержка от срабатывания датчиков пересечения 1сек
 #define MIN_LAP_TIME 1.0 * 1000000
 #define TIMER_COOLDOWN_PERIOD 5000 // 5 seconds cooldown
@@ -27,5 +27,12 @@
 #define LED_BLINK_INTERVAL 3000     // Интервал моргания 2 секунды
 #define LED_BLINK_DURATION 100      // Длительность моргания 0.1 секунды
 #define FAST_BLINK_INTERVAL 100     // Интервал быстрого моргания
+
+
+// Настройка срабатывания
+#define MIN_LAP_TIME 1.0 * 1000000
+#define HISTORY_SIZE 5
+#define DATA_UPDATE_INTERVAL 300 // Интервал обновления данных (мс)
+#define BEAM_BREAK_THRESHOLD 4.0 * 1000 // Порог для обнаружения прерывания луча в микросекундах (4 мс)
 
 #endif

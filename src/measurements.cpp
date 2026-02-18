@@ -10,17 +10,9 @@
 #include <freertos/task.h>
 // Define a critical section spinlock
 static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
-#ifdef USE_IR_SENSORS
-#include "../include/ir_receiver.h"
-#endif
-
 // --- Global Variables ---
-#ifdef RECEIVER_MODE
-Mode currentMode = LAP_TIMER;
-float distance = 3.0;
-#endif
 
+Mode currentMode = LAP_TIMER;
 // Timer State Machine
 volatile TimerStatus timerStatus = STATUS_READY;
 volatile unsigned long displayStartTime = 0;
@@ -35,8 +27,6 @@ volatile unsigned long long endTime = 0;
 volatile bool measurementReady = false;
 volatile bool measurementInProgress = false;
 
-// Добавьте volatile переменную для флага прерывания
-volatile bool sensor1Triggered = false;
 
 // Timestamps for the last received IR pulse for each sensor
 volatile unsigned long lastSensor1PulseTime = 0;
@@ -54,28 +44,18 @@ bool sensor1Active = false;
 void IRAM_ATTR handleSensor1() {
   portENTER_CRITICAL_ISR(&timerMux);
   lastSensor1PulseTime = micros();
-  sensor1Triggered = true;
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
 // Функция для управления статусным светодиодом
 void handleStatusLED() {
-  if (sensor1Triggered) {
-    digitalWrite(STATUS_IR_LED_PIN, HIGH);
-    sensor1Triggered = false; // Сбрасываем флаг
+  int sensorState = digitalRead(SENSOR1_PIN);
+  if (sensorState == HIGH) {
+    digitalWrite(STATUS_IR_LED_PIN, LOW);
     
-    // Опционально: выключить светодиод через некоторое время
-    // Если нужно, чтобы светодиод горел постоянно пока луч прерван - удалите этот таймер
-    static unsigned long ledOffTime = 0;
-    ledOffTime = millis() + 100; // Выключить через 100 мс
-  }
-  
-  // Если нужно автоматическое выключение светодиода
-  // static unsigned long lastMillis = 0;
-  // if (millis() > lastMillis && digitalRead(STATUS_IR_LED_PIN) == HIGH) {
-  //   digitalWrite(STATUS_IR_LED_PIN, LOW);
-  //   lastMillis = 0;
-  // }
+  } else {
+    digitalWrite(STATUS_IR_LED_PIN, HIGH);
+  }  
 }
 
 
@@ -148,12 +128,7 @@ void processMeasurements() {
   if (measurementReady) {
     unsigned long long duration = endTime - startTime;
 
-    if (currentMode == SPEEDOMETER) {
-      currentValue = (duration > 0) ? (distance / (duration / 1000000.0)) * 3.6 : 0.0;
-      addToHistory(speedHistory, currentValue);
-      measurementInProgress = false;
-      startTime = 0;
-    } else { // LAP_TIMER and RACE_TIMER
+    if (currentMode == LAP_TIMER) {  // LAP_TIMER and RACE_TIMER
       currentValue = duration / 1000000.0;
       isLapFinished = true; // Flag for serial print outside lock
       addToHistory(lapHistory, currentValue);

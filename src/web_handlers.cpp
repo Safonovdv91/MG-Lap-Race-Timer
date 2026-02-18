@@ -13,7 +13,6 @@ WebServer server(80);
 
 // Внешние переменные (определены в других файлах)
 extern Mode currentMode;
-extern float distance;
 extern Measurement speedHistory[HISTORY_SIZE];
 extern Measurement lapHistory[HISTORY_SIZE];
 extern int historyIndex;
@@ -65,7 +64,6 @@ void sendHtml(String path, std::function<void(String&)> replacer) {
 void handleRoot() {
   sendHtml("/index.html", [](String& html) {
     String options = "";
-    options += "<option value=\"0\"" + String(currentMode == SPEEDOMETER ? " selected" : "") + ">Speedometer</option>";
     options += "<option value=\"1\"" + String(currentMode == LAP_TIMER ? " selected" : "") + ">Lap Timer</option>";
     options += "<option value=\"2\"" + String(currentMode == RACE_TIMER ? " selected" : "") + ">Race Timer</option>";
     html.replace("{{MODE_OPTIONS}}", options);
@@ -98,16 +96,6 @@ void handleMode() {
   server.send(200, "text/plain", String(currentMode));
 }
 
-void handleDistance() {
-  String distanceParam = server.arg("d");
-  if(distanceParam != "") {
-    float newDistance = distanceParam.toFloat();
-    if(newDistance > 0) {
-      distance = newDistance;
-    }
-  }
-  server.send(200, "text/plain", String(distance, 2));
-}
 
 void handleCSS() {
   if(SPIFFS.exists("/style.css")) {

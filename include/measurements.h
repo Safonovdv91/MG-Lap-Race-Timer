@@ -3,16 +3,15 @@
 
 #include <Arduino.h>
 #include "config.h"
+#include "receiver_config.h"
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 
 
-enum Mode { SPEEDOMETER, LAP_TIMER, RACE_TIMER };
+enum Mode { LAP_TIMER, RACE_TIMER };
 enum TimerStatus { STATUS_READY, STATUS_RUNNING, STATUS_DISPLAY };
-
-extern Mode currentMode;
-extern float distance;
 
 struct Measurement {
   float value;

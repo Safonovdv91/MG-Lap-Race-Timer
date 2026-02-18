@@ -14,7 +14,7 @@ extern const int serverPort;
 
 // Объявления функций
 void loadWiFiSettings();
-void saveWiFiSettings();
+void saveWiFiSettings(); 
 
 // Настройки пинов
 
@@ -26,13 +26,7 @@ void saveWiFiSettings();
 //     GPIO6-11 — подключены к внутренней flash-памяти (их использование может "убить" плату).
 //     GPIO34-39 — только входные пины (без подтяжки), но безопасны для датчиков.
 
-#define SENSOR1_PIN 14
 
-
-#define MIN_LAP_TIME 1.0 * 1000000
-#define HISTORY_SIZE 5
-#define DATA_UPDATE_INTERVAL 300 // Интервал обновления данных (мс)
-#define BEAM_BREAK_THRESHOLD 40000 // Порог для обнаружения прерывания луча в микросекундах (40 мс)
 
 // измерение напряжения (
 // R1 (-) 1 MOm 

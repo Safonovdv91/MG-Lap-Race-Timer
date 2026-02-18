@@ -32,11 +32,8 @@ extern struct TransmitterTelemetry {
 void setup() {
   Serial.begin(115200);
   
-  // Инициализация ИК приемников
-  initIRReceivers();
-  
   // Настройка пинов датчиков как входы для ИК приемников
-  pinMode(SENSOR1_PIN, INPUT_PULLUP);
+  pinMode(SENSOR1_PIN, INPUT);
   
   // Настройка пина светодиода режима работы
   pinMode(OPERATION_MODE_LED_PIN, OUTPUT);
@@ -67,7 +64,6 @@ void setup() {
   // server.on("/api/v1/data", handleData); // Replaced by WebSockets
   server.on("/api/v1/reset", handleReset);
   server.on("/api/v1/mode", HTTP_GET, handleMode);
-  server.on("/api/v1/distance", HTTP_GET, handleDistance);
   
   server.on("/", handleRoot);
   server.on("/wifisettings", handleWiFiSettings);

@@ -50,8 +50,6 @@ void ws_loop() {
 void ws_broadcast_data() {
   ws_doc.clear();
 
-  ws_doc["mode"] = currentMode;
-  ws_doc["distance"] = distance;
   ws_doc["value"] = currentValue;
   ws_doc["battery"] = getBatteryPercentage();
   ws_doc["voltage"] = getBatteryVoltage();
@@ -75,16 +73,10 @@ void ws_broadcast_data() {
   ws_doc["tx_voltage"] = getTransmitterBatteryVoltage();
   #endif
 
-  if(currentMode == SPEEDOMETER) {
-    ws_doc["unit"] = "km/h";
-  } else {
-    ws_doc["unit"] = "s";
-  }
-
   JsonArray history = ws_doc.createNestedArray("history");
   
   lockMeasurements();
-  Measurement* history_source = (currentMode == SPEEDOMETER) ? speedHistory : lapHistory;
+  Measurement* history_source = lapHistory;
   for(int i = 0; i < HISTORY_SIZE && i < historyIndex; i++) {
     if(history_source[i].value > 0) {
       JsonObject histObj = history.createNestedObject();
