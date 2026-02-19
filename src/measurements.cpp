@@ -1,11 +1,8 @@
 #include "measurements.h"
 #include "config.h"
 #include "receiver_config.h"
-#include "battery/battery.h"
 
-#ifdef RECEIVER_MODE
 #include "websocket_handlers.h"
-#endif
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 // Define a critical section spinlock
@@ -21,35 +18,42 @@ Measurement speedHistory[HISTORY_SIZE];
 Measurement lapHistory[HISTORY_SIZE];
 int historyIndex = 0;
 
-// Core timing variables
+// Переменные времения для основного таймера
 volatile unsigned long long startTime = 0;
 volatile unsigned long long endTime = 0;
 volatile bool measurementReady = false;
 volatile bool measurementInProgress = false;
 
+// Переменные состояния луча
+static bool beamBrokenStable = false;
+static bool beamRestoredStable = true;
+static unsigned long beamRestoreStartTime = 0;
 
-// Timestamps for the last received IR pulse for each sensor
-volatile unsigned long lastSensor1PulseTime = 0;
+#define RESTORE_STABLE_TIME_US 20000  // 20 мс стабильного восстановления
+
+
+// Переменная времени когда луч разорван в (мкс)
+volatile unsigned long lastSensorPulseTime = 0;
 
 // State tracking for beam break detection
-bool beam1Broken = false;
+bool beamBroken = false;
 
-// Display & UI variables
+// Отображение & UI переменных
 volatile unsigned long long currentRaceTime = 0;
 volatile float currentValue = 0.0;
-bool sensor1Active = false;
+bool sensorActive = false;
 
-// --- Minimalistic Interrupt Service Routines ---
 
-void IRAM_ATTR handleSensor1() {
+void IRAM_ATTR handleSensor() {
+  // функция определения времени пересечения импульса
   portENTER_CRITICAL_ISR(&timerMux);
-  lastSensor1PulseTime = micros();
+  lastSensorPulseTime = micros();
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
 // Функция для управления статусным светодиодом
 void handleStatusLED() {
-  int sensorState = digitalRead(SENSOR1_PIN);
+  int sensorState = digitalRead(SENSOR_PIN);
   if (sensorState == HIGH) {
     digitalWrite(STATUS_IR_LED_PIN, LOW);
     
@@ -59,7 +63,6 @@ void handleStatusLED() {
 }
 
 
-// --- Core Logic ---
 
 void addToHistory(Measurement history[], float value) {
   // This function assumes the caller has already acquired the timerMux lock
@@ -73,119 +76,193 @@ void addToHistory(Measurement history[], float value) {
   }
 }
 
-void processMeasurements() {
-  readBattery();
-
-  // --- Phase 1: Gather Inputs (outside lock) ---
-  unsigned long currentTime_ms = millis();
-  unsigned long currentTime_us = micros();
-  unsigned long pulseTime;
-
-  // Atomically get the last pulse time
-  portENTER_CRITICAL(&timerMux);
-  pulseTime = lastSensor1PulseTime;
-  portEXIT_CRITICAL(&timerMux);
-
-  bool isBeam1CurrentlyBroken = (currentTime_us - pulseTime) > BEAM_BREAK_THRESHOLD;
-  sensor1Active = isBeam1CurrentlyBroken;
-
-  // --- Phase 2: Process State Machine (inside a single critical section) ---
-  bool should_broadcast = false;
-  bool isLapFinished = false;
-
-  lockMeasurements(); // Enter critical section
-
-  // 1. Cooldown Check
-  if (timerStatus == STATUS_DISPLAY && (currentTime_ms - displayStartTime > TIMER_COOLDOWN_PERIOD)) {
-    timerStatus = STATUS_READY;
-    measurementInProgress = false;
-    should_broadcast = true;
-  }
-
-  // 2. Sensor Trigger Logic (State-dependent)
-  if (isBeam1CurrentlyBroken && !beam1Broken) {
-    beam1Broken = true;
-    if (timerStatus == STATUS_READY) {
-      // START timer
-      startTime = currentTime_us;
-      measurementInProgress = true;
-      timerStatus = STATUS_RUNNING;
-      currentRaceTime = 0;
-      should_broadcast = true;
-    } else if (timerStatus == STATUS_RUNNING) {
-      // STOP timer
-      if (currentTime_us - startTime > MIN_LAP_TIME) {
-        endTime = currentTime_us;
-        measurementReady = true; // Flag that a lap is ready for processing
-      }
+void handleCooldown(unsigned long nowMs)
+// Куллдаун на запуск нового таймера,
+// чтобы не было мгновенной сработки после пересечения
+{
+    if (timerStatus == STATUS_DISPLAY &&
+        (nowMs - displayStartTime > TIMER_COOLDOWN_PERIOD))
+    {
+        timerStatus = STATUS_READY;
+        measurementInProgress = false;
     }
-    // In STATUS_DISPLAY, we do nothing on a new trigger.
-  } else if (!isBeam1CurrentlyBroken) {
-    beam1Broken = false;
-  }
-
-  // 3. Data Processing (if a lap was finished in the previous step)
-  if (measurementReady) {
-    unsigned long long duration = endTime - startTime;
-
-    if (currentMode == LAP_TIMER) {  // LAP_TIMER and RACE_TIMER
-      currentValue = duration / 1000000.0;
-      isLapFinished = true; // Flag for serial print outside lock
-      addToHistory(lapHistory, currentValue);
-
-      // Enter Display State
-      timerStatus = STATUS_DISPLAY;
-      displayStartTime = currentTime_ms;
-      
-      if (currentMode == RACE_TIMER) {
-        startTime = endTime; // For race timer, next lap starts from this end time
-      }
-    }
-    
-    measurementReady = false; // Mark as processed
-    should_broadcast = true;
-  }
-
-  // 4. Update Live Race Timer
-  if (timerStatus == STATUS_RUNNING) {
-    currentRaceTime = currentTime_us - startTime;
-  } else if (timerStatus == STATUS_DISPLAY) {
-    currentRaceTime = endTime - startTime; // Show final time
-  } else {
-    currentRaceTime = 0;
-  }
-
-  unlockMeasurements(); // Exit critical section
-
-  // --- Phase 3: Perform Side-Effects (outside lock) ---
-  
-  // 1. Broadcast data via WebSocket if needed
-  static unsigned long lastWsBroadcastTime = 0;
-  if (should_broadcast || (timerStatus == STATUS_RUNNING && (currentTime_ms - lastWsBroadcastTime > 100))) {
-    #ifdef RECEIVER_MODE
-      ws_broadcast_data();
-    #endif
-    lastWsBroadcastTime = currentTime_ms;
-  }
-
-  // 2. Print final lap time to Serial
-  if (isLapFinished) {
-    Serial.print("Время круга: ");
-    Serial.print(currentValue, 3);
-    Serial.println(" с");
-  }
-
-  // 3. Print live race time to Serial periodically
-  static unsigned long lastSerialPrintTime = 0;
-  if (measurementInProgress && (currentTime_ms - lastSerialPrintTime > 1000)) {
-    Serial.print("Текущее время: ");
-    Serial.print(currentRaceTime / 1000000.0, 3);
-    Serial.println(" с");
-    lastSerialPrintTime = currentTime_ms;
-  }
 }
 
-// --- Unused Functions (can be removed or left for future use) ---
+void startTimer(unsigned long nowUs)
+// Запуск таймера хронографа
+{
+    startTime = nowUs;
+    measurementInProgress = true;
+    timerStatus = STATUS_RUNNING;
+    currentRaceTime = 0;
+}
+void stopTimerIfValid(unsigned long nowUs)
+//  Остановка таймера в случае если не был 
+//  пересечен раньше времени отображения на дисплее ~ 5c
+// 
+{
+    if (nowUs - startTime > MIN_LAP_TIME)
+    {
+        endTime = nowUs;
+        measurementReady = true;
+    }
+}
+bool processFinishedMeasurement(unsigned long nowMs)
+{
+    if (!measurementReady)
+        return false;
+
+    const unsigned long long duration = endTime - startTime;
+
+    currentValue = duration / 1000000.0;
+    addToHistory(lapHistory, currentValue);
+
+    timerStatus = STATUS_DISPLAY;
+    displayStartTime = nowMs;
+
+    measurementReady = false;
+
+    return true;
+}
+void updateLiveTimer(unsigned long nowUs)
+{
+    if (timerStatus == STATUS_RUNNING)
+    {
+        currentRaceTime = nowUs - startTime;
+    }
+    else if (timerStatus == STATUS_DISPLAY)
+    {
+        currentRaceTime = endTime - startTime;
+    }
+    else
+    {
+        currentRaceTime = 0;
+    }
+}
+void handleWebsocketBroadcast(unsigned long nowMs)
+{
+    static unsigned long lastWsBroadcastTime = 0;
+
+    if (timerStatus == STATUS_RUNNING &&
+        (nowMs - lastWsBroadcastTime > 100))
+    {
+        ws_broadcast_data();
+        lastWsBroadcastTime = nowMs;
+    }
+}
+
+void handleSerialOutput(unsigned long nowMs, bool lapFinished)
+{
+  
+    static unsigned long lastSerialPrintTime = 0;
+
+    if (lapFinished)
+    {
+        Serial.print("Время круга: ");
+        Serial.print(currentValue, 3);
+        Serial.println(" с");
+    }
+
+    if (measurementInProgress &&
+        (nowMs - lastSerialPrintTime > 1000))
+    {
+        Serial.print("Текущее время: ");
+        Serial.print(currentRaceTime / 1000000.0, 3);
+        Serial.println(" с");
+        lastSerialPrintTime = nowMs;
+    }
+}
+
+void handleBeamState(bool beamBrokenNow, unsigned long nowUs)
+{
+    // ---- Луч сейчас прерван ----
+    if (beamBrokenNow)
+    {
+        // Если луч был стабильно восстановлен — это новое пересечение
+        if (beamRestoredStable)
+        {
+            beamBrokenStable = true;
+            beamRestoredStable = false;
+            beamRestoreStartTime = 0;
+
+            if (timerStatus == STATUS_READY)
+            {
+                startTimer(nowUs);
+            }
+            else if (timerStatus == STATUS_RUNNING)
+            {
+                stopTimerIfValid(nowUs);
+            }
+        }
+    }
+    // ---- Луч восстановился ----
+    else
+    {
+        if (!beamRestoredStable)
+        {
+            if (beamRestoreStartTime == 0)
+                beamRestoreStartTime = nowUs;
+
+            if (nowUs - beamRestoreStartTime > RESTORE_STABLE_TIME_US)
+            {
+                beamRestoredStable = true;
+                beamBrokenStable = false;
+                beamRestoreStartTime = 0;
+            }
+        }
+    }
+}
+
+// --- Core Logic ---
+void processMeasurements()
+// Основная логика работы при таймере
+{
+    // =========================
+    // 1 — Атомарное чтение 
+    // Копирует timestamp из ISR в локальную переменную.
+    // Чтобы работать с переменной, а не ISR
+    // Избегаем RACE CONDITION
+    // =========================
+
+    const unsigned long nowMs = millis();
+    const unsigned long nowUs = micros();
+
+    unsigned long lastPulseTime;
+    
+    portENTER_CRITICAL(&timerMux);
+    lastPulseTime = lastSensorPulseTime;
+    portEXIT_CRITICAL(&timerMux);
+
+    // Определение состояния луча. т.к. возможны всевозможные помехи,
+    // то вводим переменную на эффект дрожания входа ~ 4 ms
+    const bool beamBrokenNow =
+        (nowUs - lastPulseTime) > BEAM_BREAK_THRESHOLD;
+
+    sensorActive = beamBrokenNow;
+
+    // =========================
+    // 2 — FSM
+    // =========================
+
+    bool lapFinished = false;
+
+    lockMeasurements(); // Переходим в безопасный режим
+
+    handleCooldown(nowMs);
+    handleBeamState(beamBrokenNow, nowUs);
+    lapFinished = processFinishedMeasurement(nowMs);
+    updateLiveTimer(nowUs);
+
+    unlockMeasurements();
+
+    // =========================
+    // Phase 3 — Side Effects
+    // =========================
+
+    handleWebsocketBroadcast(nowMs);
+    handleSerialOutput(nowMs, lapFinished);
+}
+
 
 // --- Safe Accessor Functions ---
 unsigned long long getStartTimeSafe() {
@@ -207,7 +284,7 @@ unsigned long long getCurrentRaceTimeSafe() {
 bool getSensor1TriggeredSafe() {
   bool value;
   portENTER_CRITICAL(&timerMux);
-  value = beam1Broken;
+  value = beamBroken;
   portEXIT_CRITICAL(&timerMux);
   return value;
 }

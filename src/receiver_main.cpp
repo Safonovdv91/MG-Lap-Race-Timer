@@ -6,10 +6,10 @@
 #include <DNSServer.h>
 
 #include "receiver_config.h"
-#include "ir_receiver.h"
 #include "web_handlers.h"
 #include "websocket_handlers.h"
 #include "measurements.h"
+#include "battery/battery.h"
 
 // Объявление функций
 void handleUDPPackets();
@@ -33,7 +33,7 @@ void setup() {
   Serial.begin(115200);
   
   // Настройка пинов датчиков как входы для ИК приемников
-  pinMode(SENSOR1_PIN, INPUT);
+  pinMode(SENSOR_PIN, INPUT);
   
   // Настройка пина светодиода режима работы
   pinMode(OPERATION_MODE_LED_PIN, OUTPUT);
@@ -43,7 +43,7 @@ void setup() {
   // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
   // При пересечении луча на пинах будет HIGH (нет сигнала)
   // Поэтому используем прерывание по RISING (по положительному фронту)
-  attachInterrupt(digitalPinToInterrupt(SENSOR1_PIN), handleSensor1, RISING);
+  attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), handleSensor, RISING);
   
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS Mount Failed. Formatting...");
@@ -97,11 +97,14 @@ void loop() {
 
   // Обновление светодиода режима работы
   updateOperationLed();
+  
+  readBattery();
 
   handleStatusLED();
 }
 
 void handleUDPPackets() {
+  // Будет заменен на ESP-NOW
   int packetSize = udp.parsePacket();
   if (packetSize) {
     char incomingPacket[255];
@@ -167,7 +170,7 @@ void updateOperationLed() {
             break;
 
         case STATUS_DISPLAY:
-                 // Rapid blink for MIN_LAP_TIME duration, then solid ON for the rest of TIMER_COOLDOWN_PERIOD
+        // Rapid blink for MIN_LAP_TIME duration, then solid ON for the rest of TIMER_COOLDOWN_PERIOD
         if (currentTime - getDisplayStartTimeSafe() < (MIN_LAP_TIME / 1000)) { // MIN_LAP_TIME is in microseconds, convert to milliseconds 
           if (currentTime - lastBlinkTime >= FAST_BLINK_INTERVAL) {
             ledState = !ledState;

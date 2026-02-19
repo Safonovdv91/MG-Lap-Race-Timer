@@ -5,11 +5,8 @@
 #include <Arduino.h>
 
 // Пины для ИК приемников
-#define SENSOR1_PIN 13
+#define SENSOR_PIN 13
 
-#define DEBOUNCE_TIME 1.0 * 1000000 // задержка от срабатывания датчиков пересечения 1сек
-#define MIN_LAP_TIME 1.0 * 1000000
-#define TIMER_COOLDOWN_PERIOD 5000 // 5 seconds cooldown
 
 // Параметры Wi-Fi
 #define WIFI_SSID "SFMTimer"
@@ -30,9 +27,12 @@
 
 
 // Настройка срабатывания
-#define MIN_LAP_TIME 1.0 * 1000000
+#define MIN_LAP_TIME 2.0 * 1000000          // 2 c      | минимальное время проезда круга
+#define TIMER_COOLDOWN_PERIOD 5000          // 5 с      |
+#define DEBOUNCE_TIME 2.0 * 1000000         // 1 с      | задержка от срабатывания датчиков пересечения 1сек
+
 #define HISTORY_SIZE 5
-#define DATA_UPDATE_INTERVAL 300 // Интервал обновления данных (мс)
-#define BEAM_BREAK_THRESHOLD 4.0 * 1000 // Порог для обнаружения прерывания луча в микросекундах (4 мс)
+#define DATA_UPDATE_INTERVAL 300            // 300 мс   | Интервал обновления данных (мс)
+#define BEAM_BREAK_THRESHOLD 4.0 * 1000     // 4 мс     | Порог для обнаружения прерывания луча в микросекундах 
 
 #endif

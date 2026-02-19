@@ -33,12 +33,12 @@ extern volatile float currentValue;
 
 void addToHistory(Measurement history[], float value);
 void processMeasurements();
-void IRAM_ATTR handleSensor1();
+void IRAM_ATTR handleSensor();
 
 void handleStatusLED();
 
 
-extern volatile unsigned long lastSensor1PulseTime;
+extern volatile unsigned long lastSensorPulseTime;
 
 // Функции для безопасного получения значений
 unsigned long long getStartTimeSafe();
