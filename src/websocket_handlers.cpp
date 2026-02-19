@@ -86,7 +86,7 @@ void ws_broadcast_data() {
   }
   unlockMeasurements();
 
-  if (getMeasurementInProgressSafe() || getTimerStatus() == STATUS_DISPLAY) {
+  if (getMeasurementInProgressSafe() || status == STATUS_DISPLAY) {
       ws_doc["race_time"] = getCurrentRaceTimeSafe() / 1000000.0;
   } else {
       ws_doc["race_time"] = 0;
