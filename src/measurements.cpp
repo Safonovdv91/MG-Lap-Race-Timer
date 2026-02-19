@@ -139,12 +139,14 @@ void updateLiveTimer(unsigned long nowUs)
         currentRaceTime = 0;
     }
 }
-void handleWebsocketBroadcast(unsigned long nowMs)
+void handleWebsocketBroadcast(unsigned long nowMs, bool lapFinished)
 {
     static unsigned long lastWsBroadcastTime = 0;
 
-    if (timerStatus == STATUS_RUNNING &&
-        (nowMs - lastWsBroadcastTime > 100))
+    if (lapFinished ||
+        timerStatus == STATUS_DISPLAY ||
+        (timerStatus == STATUS_RUNNING &&
+         nowMs - lastWsBroadcastTime > 100))
     {
         ws_broadcast_data();
         lastWsBroadcastTime = nowMs;
@@ -259,7 +261,7 @@ void processMeasurements()
     // Phase 3 — Side Effects
     // =========================
 
-    handleWebsocketBroadcast(nowMs);
+    handleWebsocketBroadcast(nowMs,lapFinished);
     handleSerialOutput(nowMs, lapFinished);
 }
 
