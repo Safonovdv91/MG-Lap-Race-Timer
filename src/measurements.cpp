@@ -33,6 +33,7 @@ static unsigned long beamRestoreStartTime = 0;
 
 
 // Переменная времени когда луч разорван в (мкс)
+// Защита от race condition — чтение только в critical section
 volatile unsigned long lastSensorPulseTime = 0;
 
 // State tracking for beam break detection
@@ -43,11 +44,15 @@ volatile unsigned long long currentRaceTime = 0;
 volatile float currentValue = 0.0;
 bool sensorActive = false;
 
+// Флаг нового пересечения луча (устанавливается в ISR)
+volatile bool sensorTriggered = false;
+
 
 void IRAM_ATTR handleSensor() {
-  // функция определения времени пересечения импульса
+  // Минимальная логика в ISR — только установка флага и времени
   portENTER_CRITICAL_ISR(&timerMux);
   lastSensorPulseTime = micros();
+  sensorTriggered = true;
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
@@ -220,19 +225,21 @@ void processMeasurements()
 // Основная логика работы при таймере
 {
     // =========================
-    // 1 — Атомарное чтение 
-    // Копирует timestamp из ISR в локальную переменную.
-    // Чтобы работать с переменной, а не ISR
-    // Избегаем RACE CONDITION
+    // 1 — Атомарное чтение из ISR
+    // Копирует timestamp и флаг из ISR в локальную переменную
+    // Избегаем RACE CONDITION через critical section
     // =========================
 
     const unsigned long nowMs = millis();
     const unsigned long nowUs = micros();
 
     unsigned long lastPulseTime;
-    
+    bool sensorTriggeredNow;
+
     portENTER_CRITICAL(&timerMux);
     lastPulseTime = lastSensorPulseTime;
+    sensorTriggeredNow = sensorTriggered;
+    sensorTriggered = false;  // Сбрасываем флаг после чтения
     portEXIT_CRITICAL(&timerMux);
 
     // Определение состояния луча. т.к. возможны всевозможные помехи,
@@ -283,14 +290,6 @@ unsigned long long getCurrentRaceTimeSafe() {
   return value;
 }
 
-bool getSensor1TriggeredSafe() {
-  bool value;
-  portENTER_CRITICAL(&timerMux);
-  value = beamBroken;
-  portEXIT_CRITICAL(&timerMux);
-  return value;
-}
-
 bool getMeasurementReadySafe() {
   bool value;
   portENTER_CRITICAL(&timerMux);
@@ -336,6 +335,17 @@ bool getSensorActiveSafe() {
   value = sensorActive;
   portEXIT_CRITICAL(&timerMux);
   return value;
+}
+
+// Проверка и сброс флага срабатывания датчика
+// Возвращает true, если ISR был вызван с момента последнего вызова
+bool checkAndClearSensorTriggered() {
+  bool triggered;
+  portENTER_CRITICAL(&timerMux);
+  triggered = sensorTriggered;
+  sensorTriggered = false;  // Сбрасываем флаг
+  portEXIT_CRITICAL(&timerMux);
+  return triggered;
 }
 
 void lockMeasurements() {

@@ -38,19 +38,18 @@ void IRAM_ATTR handleSensor();
 void handleStatusLED();
 
 
-extern volatile unsigned long lastSensorPulseTime;
-
 // Функции для безопасного получения значений
 unsigned long long getStartTimeSafe();
 unsigned long long getCurrentRaceTimeSafe();
-bool getSensor1TriggeredSafe();
 bool getMeasurementReadySafe();
 bool getMeasurementInProgressSafe();
 unsigned long getDisplayStartTimeSafe();
 float getCurrentValueSafe();
-unsigned long long getCurrentRaceTimeSafe();
 bool getSensorActiveSafe();
 TimerStatus getTimerStatus();
+
+bool checkAndClearSensorTriggered();
+
 
 void lockMeasurements();
 void unlockMeasurements();
