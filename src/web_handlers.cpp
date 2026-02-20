@@ -130,6 +130,9 @@ void handleJS() {
 }
 
 void resetMeasurements() {
+  // Сброс в критической секции для защиты от гонок с ISR
+  lockMeasurements();
+  
   // Сбрасываем текущие измерения
   currentValue = 0.0;
   startTime = 0;
@@ -137,7 +140,9 @@ void resetMeasurements() {
   measurementReady = false;
   measurementInProgress = false;
   
-  // Сбрасываем историю
+  unlockMeasurements();
+
+  // Сбрасываем историю (не требует critical section, т.к. не используется в ISR)
   memset(speedHistory, 0, sizeof(speedHistory));
   memset(lapHistory, 0, sizeof(lapHistory));
   historyIndex = 0;

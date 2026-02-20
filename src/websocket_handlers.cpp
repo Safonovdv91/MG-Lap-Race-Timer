@@ -50,7 +50,7 @@ void ws_loop() {
 void ws_broadcast_data() {
   ws_doc.clear();
 
-  ws_doc["value"] = currentValue;
+  ws_doc["value"] = getCurrentValueSafe();
   ws_doc["battery"] = getBatteryPercentage();
   ws_doc["voltage"] = getBatteryVoltage();
 

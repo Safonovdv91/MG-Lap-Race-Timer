@@ -52,14 +52,14 @@ void IRAM_ATTR handleSensor() {
 }
 
 // Функция для управления статусным светодиодом
+// Статусный светодиод показывает текущее состояние датчика
 void handleStatusLED() {
   int sensorState = digitalRead(SENSOR_PIN);
   if (sensorState == HIGH) {
     digitalWrite(STATUS_IR_LED_PIN, LOW);
-    
   } else {
     digitalWrite(STATUS_IR_LED_PIN, HIGH);
-  }  
+  }
 }
 
 
@@ -322,6 +322,21 @@ unsigned long getDisplayStartTimeSafe() {
   portEXIT_CRITICAL(&timerMux);
   return value;
 }
+float getCurrentValueSafe() {
+  float value;
+  portENTER_CRITICAL(&timerMux);
+  value = currentValue;
+  portEXIT_CRITICAL(&timerMux);
+  return value;
+}
+
+bool getSensorActiveSafe() {
+  bool value;
+  portENTER_CRITICAL(&timerMux);
+  value = sensorActive;
+  portEXIT_CRITICAL(&timerMux);
+  return value;
+}
 
 void lockMeasurements() {
   portENTER_CRITICAL(&timerMux);
@@ -330,3 +345,5 @@ void lockMeasurements() {
 void unlockMeasurements() {
   portEXIT_CRITICAL(&timerMux);
 }
+
+

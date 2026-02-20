@@ -46,8 +46,11 @@ unsigned long long getCurrentRaceTimeSafe();
 bool getSensor1TriggeredSafe();
 bool getMeasurementReadySafe();
 bool getMeasurementInProgressSafe();
-TimerStatus getTimerStatus();
 unsigned long getDisplayStartTimeSafe();
+float getCurrentValueSafe();
+unsigned long long getCurrentRaceTimeSafe();
+bool getSensorActiveSafe();
+TimerStatus getTimerStatus();
 
 void lockMeasurements();
 void unlockMeasurements();
