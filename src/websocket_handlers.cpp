@@ -8,8 +8,9 @@
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-// Use a global JSON document to avoid heap fragmentation
-StaticJsonDocument<1024> ws_doc;
+// Расчёт: базовые поля (~100 байт) + история (5 × ~50 байт) + оверхед 50% = ~600 байт
+// Используем 1200 байт для запаса
+StaticJsonDocument<1200> ws_doc;
 
 void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
