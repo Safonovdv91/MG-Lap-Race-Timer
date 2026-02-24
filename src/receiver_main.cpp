@@ -79,7 +79,7 @@ void setup() {
   
   // Инициализация WebSocket
   ws_init();
-
+  Serial.println("Server is running!");
   // Инициализация UDP
   udp.begin(UDP_PORT);
 }
@@ -91,13 +91,13 @@ void loop() {
   
   // Обработка UDP пакетов от излучателя
   handleUDPPackets();
-  
-  // Обновление состояния измерений
-  processMeasurements();
+
+  // Обновление состояния измерений (core + side effects)
+  processMeasurementsWithSideEffects();
 
   // Обновление светодиода режима работы
   updateOperationLed();
-  
+
   readBattery();
 
   handleStatusLED();

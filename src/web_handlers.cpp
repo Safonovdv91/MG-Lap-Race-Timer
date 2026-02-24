@@ -1,9 +1,9 @@
 #include "web_handlers.h"
 #include "config.h"
-#include "measurements.h"
+#include "core/measurement_core.h"
 #include "web_content.h"
 
-#include "battery/battery.h" 
+#include "battery/battery.h"
 
 #include <ArduinoJson.h>
 #include <FS.h>
@@ -38,11 +38,8 @@ float getTransmitterBatteryVoltage() {
 }
 #endif
 
-// Объявление внешних функций из measurements.cpp
-extern unsigned long long getCurrentRaceTimeSafe();
-extern bool getMeasurementReadySafe();
-extern bool getMeasurementInProgressSafe();
-extern TimerStatus getTimerStatus();
+// Объявление внешних функций из measurement_core.h
+// (getCurrentRaceTimeSafe, getMeasurementReadySafe, etc. импортируются через core/measurement_core.h)
 
 // Helper function to send HTML file with placeholder replacement
 void sendHtml(String path, std::function<void(String&)> replacer) {
@@ -130,22 +127,8 @@ void handleJS() {
 }
 
 void resetMeasurements() {
-  // Сброс в критической секции для защиты от гонок с ISR
-  lockMeasurements();
-  
-  // Сбрасываем текущие измерения
-  currentValue = 0.0;
-  startTime = 0;
-  endTime = 0;
-  measurementReady = false;
-  measurementInProgress = false;
-  
-  unlockMeasurements();
-
-  // Сбрасываем историю (не требует critical section, т.к. не используется в ISR)
-  memset(speedHistory, 0, sizeof(speedHistory));
-  memset(lapHistory, 0, sizeof(lapHistory));
-  historyIndex = 0;
+  // Вызов core функции сброса
+  resetMeasurementsCore();
 }
 
 void handleWiFiSettings() {

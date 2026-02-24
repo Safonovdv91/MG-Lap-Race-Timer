@@ -1,57 +1,61 @@
+/**
+ * measurements.h
+ * 
+ * Заголовочный файл для обработчиков побочных эффектов.
+ * Разделение core логики и side effects
+ */
+
 #ifndef MEASUREMENTS_H
 #define MEASUREMENTS_H
 
 #include <Arduino.h>
-#include "config.h"
-#include "receiver_config.h"
+#include "core/measurement_core.h"
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
+// ============================================================================
+// LED Indicators
+// ============================================================================
 
-
-enum Mode { LAP_TIMER, RACE_TIMER };
-enum TimerStatus { STATUS_READY, STATUS_RUNNING, STATUS_DISPLAY };
-
-struct Measurement {
-  float value;
-  unsigned long timestamp;
-};
-
-extern Measurement speedHistory[HISTORY_SIZE];
-extern Measurement lapHistory[HISTORY_SIZE];
-extern int historyIndex;
-
-extern volatile unsigned long long startTime;
-extern volatile unsigned long long endTime;
-
-extern volatile bool measurementReady;
-extern volatile bool measurementInProgress;
-
-extern volatile unsigned long long currentRaceTime; // Для режима отображения реального времени
-extern volatile float currentValue;
-
-void addToHistory(Measurement history[], float value);
-void processMeasurements();
-void IRAM_ATTR handleSensor();
-
+/**
+ * Управление статусным светодиодом датчика.
+ * Показывает текущее состояние луча.
+ */
 void handleStatusLED();
 
+// ============================================================================
+// Side Effects Handlers
+// ============================================================================
 
-// Функции для безопасного получения значений
-unsigned long long getStartTimeSafe();
-unsigned long long getCurrentRaceTimeSafe();
-bool getMeasurementReadySafe();
-bool getMeasurementInProgressSafe();
-unsigned long getDisplayStartTimeSafe();
-float getCurrentValueSafe();
-bool getSensorActiveSafe();
-TimerStatus getTimerStatus();
+/**
+ * Обработка WebSocket рассылки данных.
+ * @param nowMs Текущее время в миллисекундах
+ * @param lapFinished Флаг завершения замера
+ */
+void handleWebsocketBroadcast(unsigned long nowMs, bool lapFinished);
 
-bool checkAndClearSensorTriggered();
+/**
+ * Вывод отладочной информации в Serial.
+ * @param nowMs Текущее время в миллисекундах
+ * @param lapFinished Флаг завершения замера
+ */
+void handleSerialOutput(unsigned long nowMs, bool lapFinished);
 
+// ============================================================================
+// Main Processing Wrapper
+// ============================================================================
 
-void lockMeasurements();
-void unlockMeasurements();
+/**
+ * Основная функция обработки с side effects.
+ * Вызывается из loop() приемника.
+ * 
+ * Обёртка над processMeasurements() + side effects
+ */
+void processMeasurementsWithSideEffects();
 
-#endif
+// ============================================================================
+// Legacy API (для совместимости)
+// ============================================================================
+
+// processMeasurements() теперь определяется в core/measurement_core.h
+// Для полного цикла с side effects использовать processMeasurementsWithSideEffects()
+
+#endif // MEASUREMENTS_H

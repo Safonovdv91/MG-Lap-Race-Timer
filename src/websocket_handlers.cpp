@@ -1,7 +1,7 @@
 #include "websocket_handlers.h"
-#include "measurements.h"
+#include "core/measurement_core.h"
 #include "config.h"
-#include "web_handlers.h" // To get transmitter data
+#include "web_handlers.h"
 #include <ArduinoJson.h>
 #include "web_content.h"
 #include "battery/battery.h"

@@ -33,6 +33,6 @@
 
 #define HISTORY_SIZE 5
 #define DATA_UPDATE_INTERVAL 300            // 300 мс   | Интервал обновления данных (мс)
-#define BEAM_BREAK_THRESHOLD 4.0 * 1000     // 4 мс     | Порог для обнаружения прерывания луча в микросекундах 
+#define BEAM_BREAK_THRESHOLD 40.0 * 1000     // 40 мс     | Порог для обнаружения прерывания луча в микросекундах 
 
 #endif
