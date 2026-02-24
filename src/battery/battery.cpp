@@ -37,16 +37,9 @@ void readBattery() {
 }
 
 float getBatteryVoltage() {
-    Serial.print("Напряжение: ");
-    Serial.print(batteryVoltage);
-    Serial.println(" В");
-
     return batteryVoltage;
 }
 
 int getBatteryPercentage() {
-    Serial.print("batteryPercentage: ");
-    Serial.print(batteryPercentage);
-    Serial.println(" %");
     return batteryPercentage;
 }
