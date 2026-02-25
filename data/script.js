@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function onMessage(event) {
         let data = JSON.parse(event.data);
-        
+
         const status = data.timer_status || 'ready';
         statusIndicator.className = 'status-' + status;
 
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timerSubtitle.className = 'timer-subtitle status-go';
         } else { // Covers 'ready' and 'display'
             localTimer.stop();
-            
+
             if (data.value > 0) {
                 timerDisplay.textContent = formatTime(data.value);
             } else {
@@ -132,12 +132,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        
+
         // Update battery info
         const rxBattery = document.querySelector('.battery-info.rx');
         const txBattery = document.querySelector('.battery-info.tx');
         if(rxBattery) rxBattery.textContent = `RX: ${data.battery}%`;
         if(txBattery) txBattery.textContent = `TX: ${data.tx_battery >= 0 ? data.tx_battery + '%' : '---'}`;
+        
+        // Update mode select (если сервер присылает текущий режим)
+        if(data.mode !== undefined) {
+            const modeSelect = document.getElementById('mode-select');
+            if(modeSelect) modeSelect.value = data.mode;
+        }
     }
 
     initWebSocket();

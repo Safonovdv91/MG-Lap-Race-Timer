@@ -1,3 +1,7 @@
+/** 
+ * Обработчики веб-запросов.
+ */
+
 #include "web_handlers.h"
 #include "config.h"
 #include "core/measurement_core.h"
@@ -13,9 +17,6 @@ WebServer server(80);
 
 // Внешние переменные (определены в других файлах)
 extern Mode currentMode;
-extern Measurement speedHistory[HISTORY_SIZE];
-extern Measurement lapHistory[HISTORY_SIZE];
-extern int historyIndex;
 
 // Переменные для хранения данных излучателя (только для режима приемника)
 #ifdef RECEIVER_MODE
@@ -26,9 +27,8 @@ struct TransmitterTelemetry {
 } transmitterData;
 
 int getTransmitterBatteryLevel() {
-  // Если данных нет более 10 секунд, считаем что излучатель отключен
   if (millis() - transmitterData.lastUpdate > 10000) {
-    return -1; // Сигнал о том, что излучатель недоступен
+    return -1;
   }
   return transmitterData.batteryLevel;
 }
@@ -38,18 +38,16 @@ float getTransmitterBatteryVoltage() {
 }
 #endif
 
-// Объявление внешних функций из measurement_core.h
-// (getCurrentRaceTimeSafe, getMeasurementReadySafe, etc. импортируются через core/measurement_core.h)
+// ============================================================================
+// * Все данные обновляются через WebSocket (JavaScript)
+// ============================================================================
 
-// Helper function to send HTML file with placeholder replacement
-void sendHtml(String path, std::function<void(String&)> replacer) {
+void sendHtmlFile(const char* path) {
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
     if (file) {
-      String html = file.readString();
+      server.streamFile(file, "text/html");
       file.close();
-      replacer(html);
-      server.send(200, "text/html", html);
     } else {
       server.send(500, "text/plain", "File open failed");
     }
@@ -58,27 +56,16 @@ void sendHtml(String path, std::function<void(String&)> replacer) {
   }
 }
 
+// ============================================================================
+// Web Handlers
+// ============================================================================
+
 void handleRoot() {
-  sendHtml("/index.html", [](String& html) {
-    String options = "";
-    options += "<option value=\"1\"" + String(currentMode == LAP_TIMER ? " selected" : "") + ">Lap Timer</option>";
-    options += "<option value=\"2\"" + String(currentMode == RACE_TIMER ? " selected" : "") + ">Race Timer</option>";
-    html.replace("{{MODE_OPTIONS}}", options);
-
-    String battery_status = "";
-    #ifdef RECEIVER_MODE
-      int txBatteryLevel = getTransmitterBatteryLevel();
-      battery_status += "<div class=\"battery-info tx\">TX: " + (txBatteryLevel >= 0 ? String(txBatteryLevel) + "%" : "---") + "</div>";
-    #endif
-    battery_status += "<div class=\"battery-info rx\">RX: " + String(getBatteryPercentage()) + "%</div>";
-
-    html.replace("{{BATTERY_STATUS}}", battery_status);
-  });
+  sendHtmlFile("/index.html");
 }
 
-
 void handleReset() {
-  resetMeasurements();
+  resetMeasurementsCore();
   server.send(200, "text/plain", "OK");
 }
 
@@ -93,7 +80,6 @@ void handleMode() {
   server.send(200, "text/plain", String(currentMode));
 }
 
-
 void handleCSS() {
   if(SPIFFS.exists("/style.css")) {
     File file = SPIFFS.open("/style.css", "r");
@@ -104,9 +90,7 @@ void handleCSS() {
       server.send(404, "text/plain", "File not found");
     }
   } else {
-    // Отправляем стандартный CSS, если файл не найден
-    String css = "";
-    server.send(200, "text/css", css);
+    server.send(200, "text/css", "");
   }
 }
 
@@ -120,38 +104,30 @@ void handleJS() {
       server.send(404, "text/plain", "File not found");
     }
   } else {
-    // Отправляем стандартный JS, если файл не найден
-    String js = "";
-    server.send(200, "application/javascript", js);
+    server.send(200, "application/javascript", "");
   }
 }
 
-void resetMeasurements() {
-  // Вызов core функции сброса
-  resetMeasurementsCore();
-}
-
 void handleWiFiSettings() {
-  sendHtml("/wifi_settings.html", [](String& html) {
-    html.replace("{{WIFI_SSID}}", String(ssid));
-    html.replace("{{WIFI_PASSWORD}}", String(password));
-  });
+  sendHtmlFile("/wifi_settings.html");
 }
 
 void handleUpdateWiFi() {
   String newSSID = server.arg("ssid");
   String newPassword = server.arg("password");
-  
+
   if(newSSID.length() > 0 && newSSID.length() < 32) {
-    strcpy(ssid, newSSID.c_str());
+    strncpy(ssid, newSSID.c_str(), sizeof(ssid) - 1);
+    ssid[sizeof(ssid) - 1] = '\0';
   }
-  
+
   if(newPassword.length() < 64) {
-    strcpy(password, newPassword.c_str());
+    strncpy(password, newPassword.c_str(), sizeof(password) - 1);
+    password[sizeof(password) - 1] = '\0';
   }
-  
+
   saveWiFiSettings();
-  
+
   server.sendHeader("Location", "/");
   server.send(303);
 }

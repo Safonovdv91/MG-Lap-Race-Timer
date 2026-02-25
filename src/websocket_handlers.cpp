@@ -6,6 +6,9 @@
 #include "web_content.h"
 #include "battery/battery.h"
 
+// Внешняя переменная из measurement_core.cpp
+extern Mode currentMode;
+
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 // Расчёт: базовые поля (~100 байт) + история (5 × ~50 байт) + оверхед 50% = ~600 байт
@@ -54,6 +57,9 @@ void ws_broadcast_data() {
   ws_doc["value"] = getCurrentValueSafe();
   ws_doc["battery"] = getBatteryPercentage();
   ws_doc["voltage"] = getBatteryVoltage();
+  
+  // Отправляем текущий режим для обновления UI
+  ws_doc["mode"] = currentMode;
 
   TimerStatus status = getTimerStatus();
   switch(status) {
@@ -75,7 +81,7 @@ void ws_broadcast_data() {
   #endif
 
   JsonArray history = ws_doc.createNestedArray("history");
-  
+
   lockMeasurements();
   Measurement* history_source = lapHistory;
   for(int i = 0; i < HISTORY_SIZE && i < historyIndex; i++) {
@@ -93,7 +99,6 @@ void ws_broadcast_data() {
       ws_doc["race_time"] = 0;
   }
 
-  // Serialize to a static buffer to avoid heap fragmentation from String objects
   char buffer[1024];
   size_t len = serializeJson(ws_doc, buffer);
   webSocket.broadcastTXT(buffer, len);
