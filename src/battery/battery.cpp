@@ -1,5 +1,6 @@
 #include "config.h" 
 #include "battery/battery.h"
+#include <espnow_receiver.h>
 
 float batteryVoltage = 0.0f;
 int batteryPercentage = 0;
@@ -25,15 +26,20 @@ int calculateBatteryPercentage(float voltage) {
 }
 
 void readBattery() {
-    if (millis() - lastBatteryRead > 500) {
-        int raw = analogRead(BATTERY_PIN);
-        float adcVoltage = (raw / ADC_MAX_READING) * ADC_REFERENCE_VOLTAGE;
 
-        batteryVoltage = adcVoltage * VOLTAGE_DIVIDER_MULTIPLIER;
-        batteryPercentage = calculateBatteryPercentage(batteryVoltage);
+    if (millis() - lastBatteryRead > 10000) {
+    espnow_requestBattery();
+    lastBatteryRead = millis();
+}
+    // if (millis() - lastBatteryRead > 500) {
+    //     int raw = analogRead(BATTERY_PIN);
+    //     float adcVoltage = (raw / ADC_MAX_READING) * ADC_REFERENCE_VOLTAGE;
+
+    //     batteryVoltage = adcVoltage * VOLTAGE_DIVIDER_MULTIPLIER;
+    //     batteryPercentage = calculateBatteryPercentage(batteryVoltage);
         
-        lastBatteryRead = millis();
-    }
+    //     lastBatteryRead = millis();
+    // }
 }
 
 float getBatteryVoltage() {

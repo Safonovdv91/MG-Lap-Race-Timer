@@ -4,6 +4,7 @@
 
 #include "transmitter_config.h"
 #include "battery/battery.h"
+#include "espnow_transmitter.h"
 
 WiFiUDP udp;
 
@@ -18,28 +19,12 @@ void setup() {
   initIRTransmitters();
   
   // Подключение к Wi-Fi сети
-  WiFi.mode(WIFI_STA); // Работаем в режиме станции
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  espnow_init();   // WiFi.mode(WIFI_STA) вызывается внутри
+
+  Serial.print("Transmitter MAC: ");
+  Serial.println(WiFi.macAddress());
   
-  int retries = 0;
-  while (WiFi.status() != WL_CONNECTED && retries < 20) {
-    delay(500);
-    Serial.print(".");
-    retries++;
-  }
   
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("");
-    Serial.println("Wi-Fi подключен");
-    Serial.print("IP адрес: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("");
-    Serial.println("Не удалось подключиться к Wi-Fi. Работа в автономном режиме.");
-  }
-  
-  // Инициализация UDP
-  udp.begin(UDP_PORT);
 }
 
 unsigned long lastBeaconTime = 0;
@@ -52,14 +37,9 @@ void loop() {
   // --- Battery Reading ---
   readBattery();
   
-  // --- Telemetry ---
-  if (currentTime - lastBeaconTime > BEACON_INTERVAL) {
-    sendTelemetry();
-    lastBeaconTime = currentTime;
-  }
+  espnow_loop();
   
   // --- UDP Handling ---
-  handleUDPPackets();
 }
 
 void sendTelemetry() {

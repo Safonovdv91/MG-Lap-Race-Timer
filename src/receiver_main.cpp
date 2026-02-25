@@ -10,6 +10,7 @@
 #include "websocket_handlers.h"
 #include "measurements.h"
 #include "battery/battery.h"
+#include "espnow_receiver.h"
 
 // Объявление функций
 void handleUDPPackets();
@@ -52,9 +53,13 @@ void setup() {
   // Загрузка сохраненных настроек wifi
   loadWiFiSettings();
 
+  WiFi.mode(WIFI_AP_STA);         
   // Используем сохранённые настройки или константы по умолчанию
   Serial.printf("[WiFi] Создаём AP: SSID=%s, Password=%s\n", ssid, password);
   WiFi.softAP(ssid, password);
+  
+  Serial.print("Receiver MAC:");
+  Serial.println(WiFi.softAPmacAddress());
   
   // Настройка DNS для перенаправления всех запросов
   dnsServer.start(53, "*", WiFi.softAPIP());
@@ -89,6 +94,7 @@ void setup() {
   Serial.println("Server is running!");
   // Инициализация UDP
   udp.begin(UDP_PORT);
+  espnow_init();
 }
 
 void loop() {
@@ -96,6 +102,8 @@ void loop() {
   server.handleClient();
   dnsServer.processNextRequest(); // Обработка DNS запросов
   
+  // Обработка ESP-NOW пакетов от излучателя
+  espnow_loop();
   // Обработка UDP пакетов от излучателя
   handleUDPPackets();
 
