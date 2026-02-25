@@ -112,6 +112,83 @@ void handleWiFiSettings() {
   sendHtmlFile("/wifi_settings.html");
 }
 
+/**
+ * API для получения текущих Wi-Fi настроек
+ */
+void handleGetWifiSettings() {
+  StaticJsonDocument<256> doc;
+  doc["ssid"] = ssid;
+  doc["password"] = password;
+  
+  String json;
+  serializeJson(doc, json);
+  server.sendHeader("Content-Type", "application/json; charset=utf-8");
+  server.send(200, "application/json", json);
+}
+
+/**
+ * API для обновления пароля Wi-Fi
+ * Проверяет старый пароль, устанавливает новый
+ */
+void handleUpdateWifiPassword() {
+  if (server.method() != HTTP_POST) {
+    server.send(405, "text/plain", "Method Not Allowed");
+    return;
+  }
+  
+  // Парсинг JSON тела запроса
+  StaticJsonDocument<512> doc;
+  DeserializationError error = deserializeJson(doc, server.arg("plain"));
+  
+  if (error) {
+    String json = "{\"success\":false,\"message\":\"Invalid JSON\"}";
+    server.sendHeader("Content-Type", "application/json; charset=utf-8");
+    server.send(400, "application/json", json);
+    return;
+  }
+  
+  const char* oldPassword = doc["oldPassword"];
+  const char* newPassword = doc["newPassword"];
+  
+  // Валидация входных данных
+  if (!oldPassword || !newPassword) {
+    String json = "{\"success\":false,\"message\":\"Missing password fields\"}";
+    server.sendHeader("Content-Type", "application/json; charset=utf-8");
+    server.send(400, "application/json", json);
+    return;
+  }
+  
+  // Проверка старого пароля
+  if (strcmp(oldPassword, password) != 0) {
+    String json = "{\"success\":false,\"message\":\"Неверный текущий пароль\"}";
+    server.sendHeader("Content-Type", "application/json; charset=utf-8");
+    server.send(403, "application/json", json);
+    return;
+  }
+  
+  // Валидация нового пароля
+  size_t newPassLen = strlen(newPassword);
+  if (newPassLen < 8 || newPassLen > 64) {
+    String json = "{\"success\":false,\"message\":\"Пароль должен быть от 8 до 64 символов\"}";
+    server.sendHeader("Content-Type", "application/json; charset=utf-8");
+    server.send(400, "application/json", json);
+    return;
+  }
+  
+  // Сохранение нового пароля
+  strncpy(password, newPassword, sizeof(password) - 1);
+  password[sizeof(password) - 1] = '\0';
+  saveWiFiSettings();
+  
+  // Логирование (для отладки)
+  Serial.printf("[WiFi] Пароль изменён. Новый: %s\n", password);
+  
+  // Успешный ответ
+  String json = "{\"success\":true,\"message\":\"Пароль изменён\"}";
+  server.sendHeader("Content-Type", "application/json; charset=utf-8");
+  server.send(200, "application/json", json);
+}
+
 void handleUpdateWiFi() {
   String newSSID = server.arg("ssid");
   String newPassword = server.arg("password");

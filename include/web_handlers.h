@@ -18,6 +18,8 @@ void handleJS();
 void resetMeasurements();
 void handleWiFiSettings();
 void handleUpdateWiFi();
+void handleGetWifiSettings();      // получения настроек Wi-Fi
+void handleUpdateWifiPassword();   // обновления пароля
 
 // Функции для получения телеметрии излучателя (только для режима приемника)
 #ifdef RECEIVER_MODE

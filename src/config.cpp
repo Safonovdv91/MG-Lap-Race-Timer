@@ -8,16 +8,11 @@ Preferences preferences;
 
 // Определения с инициализацией
 #ifdef TRANSMITTER_MODE
-  char ssid[32] = "SFMTimer";
- char password[64] = "123456789";
+  char ssid[32] = "MgTimer-01(TX)";
+  char password[64] = "25031991";
 #else
-  #ifdef RECEIVER_MODE
-    char ssid[32] = "SFMTimer";
-    char password[64] = "123456789";
-  #else
-    char ssid[32] = "MG";
-    char password[64] = "25031991";
-  #endif
+  char ssid[32] = "MGTimer-01";
+  char password[64] = "25031991";
 #endif
 const int serverPort = 80;
 
@@ -28,11 +23,11 @@ void loadWiFiSettings() {
   
   if (!savedSSID.isEmpty()) {
     strncpy(ssid, savedSSID.c_str(), sizeof(ssid) - 1);
-    ssid[sizeof(ssid) - 1] = '\0';  // Гарантируем терминатор
+    ssid[sizeof(ssid) - 1] = '\0';
   }
   if (!savedPass.isEmpty()) {
     strncpy(password, savedPass.c_str(), sizeof(password) - 1);
-    password[sizeof(password) - 1] = '\0';  // Гарантируем терминатор
+    password[sizeof(password) - 1] = '\0';
   }
   preferences.end();
 }

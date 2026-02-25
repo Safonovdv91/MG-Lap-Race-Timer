@@ -44,7 +44,7 @@ void setup() {
   // При пересечении луча на пинах будет HIGH (нет сигнала)
   // Поэтому используем прерывание по RISING (по положительному фронту)
   attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), handleSensor, RISING);
-  
+
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS Mount Failed. Formatting...");
   }
@@ -52,7 +52,10 @@ void setup() {
   // Загрузка сохраненных настроек wifi
   loadWiFiSettings();
 
-  WiFi.softAP(WIFI_SSID, WIFI_PASSWORD);
+  // Используем сохранённые настройки или константы по умолчанию
+  Serial.printf("[WiFi] Создаём AP: SSID=%s, Password=%s\n", ssid, password);
+  WiFi.softAP(ssid, password);
+  
   // Настройка DNS для перенаправления всех запросов
   dnsServer.start(53, "*", WiFi.softAPIP());
   // Установка имени хоста
@@ -70,6 +73,10 @@ void setup() {
   server.on("/updatewifi", HTTP_POST, handleUpdateWiFi);
   server.on("/style.css", handleCSS);
   server.on("/script.js", handleJS);
+  
+  // API для настроек Wi-Fi
+  server.on("/api/v1/wifi/settings", HTTP_GET, handleGetWifiSettings);
+  server.on("/api/v1/wifi/update", HTTP_POST, handleUpdateWifiPassword);
 
   server.onNotFound([]() {
     server.send(404, "text/plain", "Not found");
