@@ -13,21 +13,12 @@
 #include "espnow_receiver.h"
 
 // Объявление функций
-void handleUDPPackets();
 void updateOperationLed();
 
 // Объявление сервера, определенного в web_handlers.cpp
 extern WebServer server;
 
-WiFiUDP udp;
 DNSServer dnsServer;
-
-// Переменные для хранения данных излучателя определены в web_handlers.cpp
-extern struct TransmitterTelemetry {
-  int batteryLevel;
-  float batteryVoltage;
-  unsigned long lastUpdate;
-} transmitterData;
 
 
 void setup() {
@@ -97,8 +88,6 @@ void setup() {
   initReadBattery();
   
   Serial.println("Server is running!");
-  // Инициализация UDP
-  udp.begin(UDP_PORT);
   
   //инициализция esp-now
   espnow_init();
@@ -111,8 +100,6 @@ void loop() {
   
   // Обработка ESP-NOW пакетов от излучателя
   espnow_loop();
-  // Обработка UDP пакетов от излучателя
-  handleUDPPackets();
 
   // Обновление состояния измерений (core + side effects)
   processMeasurementsWithSideEffects();
@@ -123,30 +110,11 @@ void loop() {
 
   // Определение заряда батареи
   readBattery();
+  
   // Запрос статуса заряда у передатчика.
   handleTxReadBattery();
-  
-
 }
 
-
-void handleUDPPackets() {
-  // Будет заменен на ESP-NOW
-  int packetSize = udp.parsePacket();
-  if (packetSize) {
-    char incomingPacket[255];
-    udp.read(incomingPacket, sizeof(incomingPacket));
-    incomingPacket[packetSize] = '\0';
-    
-    // Парсинг телеметрии излучателя
-    if (strncmp(incomingPacket, "TELEMETRY:", 10) == 0) {
-      sscanf(incomingPacket, "TELEMETRY:%d:%fV", &transmitterData.batteryLevel, &transmitterData.batteryVoltage);
-      transmitterData.lastUpdate = millis();
-      Serial.printf("Получена телеметрия излучателя: %d%% (%.2fV)\n",
-                    transmitterData.batteryLevel, transmitterData.batteryVoltage);
-    }
-  }
-}
 
 void updateOperationLed() {
     static unsigned long lastBlinkTime = 0;

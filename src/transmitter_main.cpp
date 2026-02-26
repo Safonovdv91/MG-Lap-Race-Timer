@@ -6,11 +6,6 @@
 #include "battery/battery.h"
 #include "espnow_transmitter.h"
 
-WiFiUDP udp;
-
-// Объявления функций
-void sendTelemetry();
-void handleUDPPackets();
 
 void setup() {
   Serial.begin(115200);
@@ -39,32 +34,6 @@ void loop() {
 
   // --- Battery Reading ---
   readBattery();
-  
+  // --- ESP-NOW ---
   espnow_loop();
-  
-  // --- UDP Handling ---
-}
-
-void sendTelemetry() {
-  // Получение данных о состоянии из модуля батареи
-  float battVoltage = getBatteryVoltage();
-  int batteryLevel = getBatteryPercentage();
-  
-  // Формирование и отправка UDP пакета
-  IPAddress receiverIP(192, 168, 4, 1); // IP адрес по умолчанию для AP режима
-  udp.beginPacket(receiverIP, UDP_PORT);
-  udp.printf("TELEMETRY:%d:%.2fV", batteryLevel, battVoltage);
-  udp.endPacket();
-}
-
-void handleUDPPackets() {
-  int packetSize = udp.parsePacket();
-  if (packetSize) {
-    char incomingPacket[255];
-    udp.read(incomingPacket, sizeof(incomingPacket));
-    incomingPacket[packetSize] = '\0';
-    
-    // Обработка входящих команд (опционально)
-    Serial.printf("Получено UDP сообщение: %s\n", incomingPacket);
   }
-}
