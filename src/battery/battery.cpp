@@ -4,9 +4,21 @@
 
 float batteryVoltage = 0.0f;
 int batteryPercentage = 0;
-unsigned long lastBatteryRead = 0;
 
+static unsigned long lastSampleTime = 0;
 
+// EMA
+static float emaVoltage = 0.0f;
+const float EMA_ALPHA = 0.1f;   // 0.05 плавнее, 0.1 оптимально, 0.2 быстрее
+
+// ===== Инициализация аккумуляторометра =====
+void initReadBattery(){
+    Serial.printf("Инициализация определения заряда батареи [Battery] [PIN]:= %d ",BATTERY_PIN);
+    analogSetPinAttenuation(BATTERY_PIN, ADC_11db);
+    analogReadResolution(12); // фиксируем 12 бит 0..4095
+}
+
+// ===== Расчёт процентов =====
 int calculateBatteryPercentage(float voltage) {
   // 4.1В = 100%, 3.4В = 0%
   // Li-Ion: 4.2В=100%, 3.0В=0%
@@ -26,19 +38,37 @@ int calculateBatteryPercentage(float voltage) {
   return 0;
 }
 
+
+// ===== Чтение батареи =====
 void readBattery() {
-    // получение значений заряда батареи
-    if (millis() - lastBatteryRead > 10000) {
+
+    unsigned long now = millis();
+
+    // раз в 2 секунды
+    if (now - lastSampleTime >= 2000) {
+        lastSampleTime = now;
+
+        // ESP32 ADC особенность( выбрасываем первое значение)
+        analogRead(BATTERY_PIN);
         int raw = analogRead(BATTERY_PIN);
+
         float adcVoltage = (raw / ADC_MAX_READING) * ADC_REFERENCE_VOLTAGE;
+        float newVoltage = adcVoltage * VOLTAGE_DIVIDER_MULTIPLIER;
 
-        batteryVoltage = adcVoltage * VOLTAGE_DIVIDER_MULTIPLIER;
+        // ===== EMA =====
+        if (emaVoltage == 0.0f) {
+            emaVoltage = newVoltage;      // первый запуск
+        } else {
+            emaVoltage = emaVoltage + EMA_ALPHA * (newVoltage - emaVoltage);
+        }
+
+        batteryVoltage = emaVoltage;
         batteryPercentage = calculateBatteryPercentage(batteryVoltage);
-
-        lastBatteryRead = millis();
     }
 }
 
+
+// ===== Геттеры =====
 float getBatteryVoltage() {
     return batteryVoltage;
 }

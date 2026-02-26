@@ -24,6 +24,9 @@ void setup() {
   Serial.print("Transmitter MAC: ");
   Serial.println(WiFi.macAddress());
   
+  // Инициализация определения заряда батареи
+  initReadBattery();
+  
   
 }
 

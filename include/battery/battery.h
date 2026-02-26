@@ -5,10 +5,10 @@ extern float batteryVoltage;
 extern int batteryPercentage;
 extern unsigned long lastBatteryRead;
 
+void initReadBattery();
 void readBattery();
 int calculateBatteryPercentage(float voltage);
 
 float getBatteryVoltage();
 int getBatteryPercentage();
-
 #endif

@@ -34,6 +34,7 @@ void setup() {
   Serial.begin(115200);
   
   // Настройка пинов датчиков как входы для ИК приемников
+  
   pinMode(SENSOR_PIN, INPUT);
   
   // Настройка пина светодиода режима работы
@@ -91,9 +92,15 @@ void setup() {
   
   // Инициализация WebSocket
   ws_init();
+
+  // Инициализация определения заряда батареи
+  initReadBattery();
+  
   Serial.println("Server is running!");
   // Инициализация UDP
   udp.begin(UDP_PORT);
+  
+  //инициализция esp-now
   espnow_init();
 }
 
