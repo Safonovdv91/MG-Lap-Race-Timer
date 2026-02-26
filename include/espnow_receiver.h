@@ -4,9 +4,15 @@
 // Инициализация ESP-NOW. Вызвать после WiFi.softAP(...)
 void espnow_init();
 
-// Запрос данных батареи у transmitter'а.
-// Вызывать по событию (таймер, WebSocket-команда, кнопка и т.д.)
-void espnow_requestBattery();
+// Запрос батареи у устройства с указанным MAC.
+// Можно вызывать для любого ESP устройства.
+// Пример: uint8_t mac[] = MAC_TRANSMITTER; espnow_requestBattery(mac);
+void espnow_requestBattery(const uint8_t *targetMac);
 
-// Обработка таймаутов. Вызывать из loop()
+// Вызывать из loop():
+
+// Обработка таймаутов
 void espnow_loop();
+
+// опрос заряда батареи у трансмиттеров
+void handleTxReadBattery();

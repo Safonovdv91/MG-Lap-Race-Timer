@@ -112,11 +112,16 @@ void loop() {
 
   // Обновление светодиода режима работы
   updateOperationLed();
-
-  readBattery();
-
   handleStatusLED();
+
+  // Определение заряда батареи
+  readBattery();
+  // Запрос статуса заряда у передатчика.
+  handleTxReadBattery();
+  
+
 }
+
 
 void handleUDPPackets() {
   // Будет заменен на ESP-NOW

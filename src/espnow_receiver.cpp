@@ -18,11 +18,19 @@ extern struct TransmitterTelemetry {
   unsigned long lastUpdate;
 } transmitterData;
 
+// ---- Вспомогательный макрос для печати MAC ----
+#define MAC_FMT "%02X:%02X:%02X:%02X:%02X:%02X"
+#define MAC_ARG(mac) mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+
 // ---- Внутренние переменные ----
 static uint8_t  s_requestId       = 0;
 static bool     s_responsePending = false;
 static uint32_t s_requestSentAt   = 0;
+static uint8_t   s_pendingMac[6]     = {0}; // MAC устройства, от которого ждём ответ
 static const uint32_t REQUEST_TIMEOUT_MS = 3000;
+
+static uint32_t  lastTxBatteryRead   = 0;
+
 
 // MAC устройства #3 для ретрансляции.
 // Замените на реальный MAC или оставьте broadcast.
@@ -70,30 +78,53 @@ void espnow_init() {
                   WiFi.softAPmacAddress().c_str());
 }
 
-// Запрос данных батареи у transmitter'а.
-// Вызывайте по таймеру или по событию (кнопка, WebSocket-команда и т.д.)
-void espnow_requestBattery() {
+// ------------------------------------------------------------
+//  Унифицированный запрос батареи — передаёшь любой MAC
+//  подчиненного устройства.
+// ------------------------------------------------------------
+void espnow_requestBattery(const uint8_t *targetMac) {
     if (s_responsePending) {
         Serial.println("[ESP-NOW] Запрос уже в ожидании, пропускаем");
         return;
     }
 
-    uint8_t transmitterMac[] = MAC_TRANSMITTER;
+    // Добавляем peer динамически если ещё нет
+    if (!esp_now_is_peer_exist(targetMac)) {
+        if (!addPeer(targetMac, 0, false)) {
+            Serial.printf("[ESP-NOW] Не удалось добавить peer " MAC_FMT "\n",
+                            MAC_ARG(targetMac));
+            return;
+        }
+    }
+
     BatteryRequestPacket pkt;
     pkt.type      = PACKET_BATTERY_REQUEST;
     pkt.requestId = ++s_requestId;
     pkt.reserved  = 0;
 
-    esp_err_t result = esp_now_send(transmitterMac,
-                                    (uint8_t *)&pkt, sizeof(pkt));
+    memcpy(s_pendingMac, targetMac, 6); // запоминаем от кого ждём ответ
+
+    esp_err_t result = esp_now_send(targetMac, (uint8_t *)&pkt, sizeof(pkt));
     if (result == ESP_OK) {
         s_responsePending = true;
         s_requestSentAt   = millis();
-        Serial.printf("[ESP-NOW] Запрос батареи отправлен (id=%d)\n",
-                      pkt.requestId);
+        Serial.printf("[ESP-NOW] Запрос батареи → " MAC_FMT " (id=%d)\n",
+                        MAC_ARG(targetMac), pkt.requestId);
     } else {
-        Serial.printf("[ESP-NOW] Ошибка отправки запроса: %d\n", result);
+        Serial.printf("[ESP-NOW] Ошибка отправки → " MAC_FMT " err=%d\n",
+                        MAC_ARG(targetMac), result);
     }
+}
+
+// Функция запроса данных с аккумуляторов( в данный момент 1, потом добаится блок)
+void handleTxReadBattery() {
+    if (millis() - lastTxBatteryRead < 10000) return;
+    lastTxBatteryRead = millis();
+
+    uint8_t transmitterMac[] = MAC_TRANSMITTER;
+    Serial.printf("[Battery] Запрос у transmitter " MAC_FMT "\n",
+                  MAC_ARG(transmitterMac));
+    espnow_requestBattery(transmitterMac);
 }
 
 // Вызывать из loop() для обработки таймаутов
@@ -143,8 +174,6 @@ static void onDataRecv(const uint8_t *mac_addr,
             Serial.printf("[ESP-NOW] Батарея transmitter: %d%% (%.2fV)\n",
                           resp->batteryLevel, resp->batteryVoltage);
 
-            // Ретранслируем на device3
-            relayToDevice3(resp);
             break;
         }
 
