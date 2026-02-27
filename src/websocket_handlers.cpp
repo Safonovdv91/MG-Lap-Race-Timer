@@ -1,10 +1,15 @@
+#include <ArduinoJson.h>
+
 #include "websocket_handlers.h"
 #include "core/measurement_core.h"
 #include "config.h"
 #include "web_handlers.h"
-#include <ArduinoJson.h>
 #include "web_content.h"
 #include "battery/battery.h"
+
+#ifdef RECEIVER_MODE
+#include "transmitter_data.h"
+#endif
 
 // Внешняя переменная из measurement_core.cpp
 extern Mode currentMode;
@@ -75,9 +80,9 @@ void ws_broadcast_data() {
   }
 
   #ifdef RECEIVER_MODE
-  int txBatteryLevel = getTransmitterBatteryLevel();
-  ws_doc["tx_battery"] = txBatteryLevel;
-  ws_doc["tx_voltage"] = getTransmitterBatteryVoltage();
+    int txBatteryLevel = getTransmitterBatteryLevel();
+    ws_doc["tx_battery"] = txBatteryLevel;
+    ws_doc["tx_voltage"] = getTransmitterBatteryVoltage();
   #endif
 
   JsonArray history = ws_doc.createNestedArray("history");

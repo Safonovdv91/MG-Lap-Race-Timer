@@ -1,17 +1,19 @@
 /** 
  * Обработчики веб-запросов.
  */
+#include <ArduinoJson.h>
+#include <FS.h>
+#include <SPIFFS.h>
 
 #include "web_handlers.h"
 #include "config.h"
 #include "core/measurement_core.h"
 #include "web_content.h"
-
 #include "battery/battery.h"
 
-#include <ArduinoJson.h>
-#include <FS.h>
-#include <SPIFFS.h>
+#ifdef RECEIVER_MODE
+#include "transmitter_data.h"  // ← теперь всё живёт здесь
+#endif
 
 WebServer server(80);
 
@@ -20,22 +22,7 @@ extern Mode currentMode;
 
 // Переменные для хранения данных излучателя (только для режима приемника)
 #ifdef RECEIVER_MODE
-struct TransmitterTelemetry {
-  int batteryLevel = -1;
-  float batteryVoltage = 0.0;
-  unsigned long lastUpdate = 0;
-} transmitterData;
 
-int getTransmitterBatteryLevel() {
-  if (millis() - transmitterData.lastUpdate > 10000) {
-    return -1;
-  }
-  return transmitterData.batteryLevel;
-}
-
-float getTransmitterBatteryVoltage() {
-  return transmitterData.batteryVoltage;
-}
 #endif
 
 // ============================================================================

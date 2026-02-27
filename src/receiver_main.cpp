@@ -11,6 +11,8 @@
 #include "measurements.h"
 #include "battery/battery.h"
 #include "espnow_receiver.h"
+#include "espnow_broadcast.h"
+#include "transmitter_data.h"
 
 // Объявление функций
 void updateOperationLed();
@@ -42,77 +44,87 @@ void setup() {
     Serial.println("SPIFFS Mount Failed. Formatting...");
   }
 
-  // Загрузка сохраненных настроек wifi
-  loadWiFiSettings();
+    // Загрузка сохраненных настроек wifi
+    loadWiFiSettings();
 
-  WiFi.mode(WIFI_AP_STA);         
-  // Используем сохранённые настройки или константы по умолчанию
-  Serial.printf("[WiFi] Создаём AP: SSID=%s, Password=%s\n", ssid, password);
-  WiFi.softAP(ssid, password);
+    WiFi.mode(WIFI_AP_STA);         
+    // Используем сохранённые настройки или константы по умолчанию
+    Serial.printf("[WiFi] Создаём AP: SSID=%s, Password=%s\n", ssid, password);
+    WiFi.softAP(ssid, password);
   
-  Serial.print("Receiver MAC:");
-  Serial.println(WiFi.softAPmacAddress());
-  
-  // Настройка DNS для перенаправления всех запросов
-  dnsServer.start(53, "*", WiFi.softAPIP());
-  // Установка имени хоста
-  WiFi.setHostname("chrono.mg");
+    Serial.print("Receiver MAC:");
+    Serial.println(WiFi.softAPmacAddress());
+    
+    // Настройка DNS для перенаправления всех запросов
+    dnsServer.start(53, "*", WiFi.softAPIP());
+    // Установка имени хоста
+    WiFi.setHostname("chrono.mg");
 
-  Serial.print("AP IP address: ");
-  Serial.println(WiFi.softAPIP());
+    Serial.print("AP IP address: ");
+    Serial.println(WiFi.softAPIP());
 
-  // server.on("/api/v1/data", handleData); // Replaced by WebSockets
-  server.on("/api/v1/reset", handleReset);
-  server.on("/api/v1/mode", HTTP_GET, handleMode);
-  
-  server.on("/", handleRoot);
-  server.on("/wifisettings", handleWiFiSettings);
-  server.on("/updatewifi", HTTP_POST, handleUpdateWiFi);
-  server.on("/style.css", handleCSS);
-  server.on("/script.js", handleJS);
-  
-  // API для настроек Wi-Fi
-  server.on("/api/v1/wifi/settings", HTTP_GET, handleGetWifiSettings);
-  server.on("/api/v1/wifi/update", HTTP_POST, handleUpdateWifiPassword);
+    // server.on("/api/v1/data", handleData); // Replaced by WebSockets
+    server.on("/api/v1/reset", handleReset);
+    server.on("/api/v1/mode", HTTP_GET, handleMode);
+    
+    server.on("/", handleRoot);
+    server.on("/wifisettings", handleWiFiSettings);
+    server.on("/updatewifi", HTTP_POST, handleUpdateWiFi);
+    server.on("/style.css", handleCSS);
+    server.on("/script.js", handleJS);
+    
+    // API для настроек Wi-Fi
+    server.on("/api/v1/wifi/settings", HTTP_GET, handleGetWifiSettings);
+    server.on("/api/v1/wifi/update", HTTP_POST, handleUpdateWifiPassword);
 
-  server.onNotFound([]() {
-    server.send(404, "text/plain", "Not found");
-  });
+    server.onNotFound([]() {
+        server.send(404, "text/plain", "Not found");
+    });
 
-  server.begin();
+    server.begin();
   
-  // Инициализация WebSocket
-  ws_init();
+    // Инициализация WebSocket
+    ws_init();
 
-  // Инициализация определения заряда батареи
-  initReadBattery();
+    // Инициализация определения заряда батареи
+    initReadBattery();
   
-  Serial.println("Server is running!");
+    Serial.println("Server is running!");
   
-  //инициализция esp-now
-  espnow_init();
+    //инициализция esp-now
+
+    transmitterData_init();  // ← добавить ДО espnow_init()
+    espnow_init();
+
+    // инициализация broadcast
+    espnow_broadcast_init();
+    espnow_broadcast_setInterval(90); // 11 раза в секунду общая рассылка
 }
 
 void loop() {
-  ws_loop(); // Обработка WebSocket
-  server.handleClient();
-  dnsServer.processNextRequest(); // Обработка DNS запросов
-  
-  // Обработка ESP-NOW пакетов от излучателя
-  espnow_loop();
+    ws_loop(); // Обработка WebSocket
+    server.handleClient();
+    dnsServer.processNextRequest(); // Обработка DNS запросов
+    
+    // Обработка ESP-NOW пакетов от излучателя
+    espnow_loop();
 
-  // Обновление состояния измерений (core + side effects)
-  processMeasurementsWithSideEffects();
+    // Обновление состояния измерений (core + side effects)
+    processMeasurementsWithSideEffects();
+    
+    // Обновление светодиода режима работы
+    updateOperationLed();
+    handleStatusLED();
 
-  // Обновление светодиода режима работы
-  updateOperationLed();
-  handleStatusLED();
+    // Определение заряда батареи
+    readBattery();
+    
+    // Запрос статуса заряда у передатчика.
+    handleTxReadBattery();
 
-  // Определение заряда батареи
-  readBattery();
-  
-  // Запрос статуса заряда у передатчика.
-  handleTxReadBattery();
+    // Broadcast данных
+    espnow_broadcast_loop();
+
 }
 
 
