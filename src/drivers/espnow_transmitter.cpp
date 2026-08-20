@@ -3,8 +3,8 @@
 // ============================================================
 #include <WiFi.h>
 
-#include "espnow_transmitter.h"
-#include "espnow_protocol.h"
+#include "drivers/espnow_transmitter.h"
+#include "drivers/espnow_protocol.h"
 #include "esp_now.h"
 
 // ---- Внешние зависимости ----

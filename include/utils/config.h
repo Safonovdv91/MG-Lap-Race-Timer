@@ -2,7 +2,12 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+// Для тестов: если определено UNIT_TEST, используем моки вместо Preferences.h
+#ifdef UNIT_TEST
+// Preferences уже определён в arduino_mocks.h
+#else
 #include <Preferences.h>
+#endif
 
 extern Preferences preferences;
 
@@ -14,7 +19,7 @@ extern const int serverPort;
 
 // Объявления функций
 void loadWiFiSettings();
-void saveWiFiSettings(); 
+void saveWiFiSettings();
 
 // Настройки пинов
 
@@ -25,5 +30,5 @@ void saveWiFiSettings();
 //     GPIO0, GPIO2, GPIO12, GPIO15 — участвуют в определении режима загрузки.
 //     GPIO6-11 — подключены к внутренней flash-памяти (их использование может "убить" плату).
 //     GPIO34-39 — только входные пины (без подтяжки), но безопасны для датчиков.
-  
+
 #endif

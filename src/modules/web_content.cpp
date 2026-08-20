@@ -1,6 +1,6 @@
-#include "../include/web_content.h"
-#include "../include/config.h"
-#include "../include/measurements.h"
+#include "modules/web_content.h"
+#include "utils/config.h"
+#include "modules/measurements.h"
 #include <WebServer.h>
 #include <FS.h>
 #include <SPIFFS.h>

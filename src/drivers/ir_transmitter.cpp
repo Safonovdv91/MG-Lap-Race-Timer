@@ -1,4 +1,4 @@
-#include "transmitter_config.h"
+#include "utils/transmitter_config.h"
 #include <Arduino.h>
 
 // Инициализация ИК передатчиков

@@ -2,7 +2,7 @@
 //  transmitter_data.cpp — потокобезопасное хранилище телеметрии
 // ============================================================
 
-#include "transmitter_data.h"
+#include "modules/transmitter_data.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 

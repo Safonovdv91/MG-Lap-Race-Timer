@@ -1,7 +1,7 @@
 // config.cpp
 #include <cstring>
 
-#include "config.h"
+#include "utils/config.h"
 #include <Preferences.h>
 
 Preferences preferences;

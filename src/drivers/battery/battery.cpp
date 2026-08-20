@@ -1,6 +1,15 @@
-#include "config.h" 
-#include "battery/battery.h"
-#include "espnow_receiver.h"
+// Для тестов: если определено UNIT_TEST, используем моки вместо Arduino.h
+#ifdef UNIT_TEST
+#include "fixtures/mocks/arduino_mocks.h"
+#else
+#include <Arduino.h>
+#endif
+
+#include "utils/config.h"
+#include "drivers/battery/battery.h"
+#ifndef UNIT_TEST
+#include "drivers/espnow_receiver.h"
+#endif
 
 float batteryVoltage = 0.0f;
 int batteryPercentage = 0;
@@ -62,7 +71,7 @@ void readBattery() {
             emaVoltage = emaVoltage + EMA_ALPHA * (newVoltage - emaVoltage);
         }
 
-        batteryVoltage = emaVoltage;
+        batteryVoltage = emaVoltage * 3.7;
         batteryPercentage = calculateBatteryPercentage(batteryVoltage);
     }
 }

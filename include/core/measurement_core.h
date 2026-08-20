@@ -1,18 +1,23 @@
 /**
  * measurement_core.h
- * 
+ *
  * Заголовочный файл ядра логики измерений.
  */
 
 #ifndef MEASUREMENT_CORE_H
 #define MEASUREMENT_CORE_H
 
+// Для тестов: если определено UNIT_TEST, используем моки вместо Arduino.h
+#ifdef UNIT_TEST
+#include "fixtures/mocks/arduino_mocks.h"
+#else
 #include <Arduino.h>
-#include "config.h"
-#include "receiver_config.h"
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#endif
+
+#include "utils/config.h"
+#include "utils/receiver_config.h"
 
 // ============================================================================
 // Типы данных

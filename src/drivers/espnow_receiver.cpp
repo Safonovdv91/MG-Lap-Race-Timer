@@ -2,9 +2,9 @@
 //  espnow_receiver.cpp  (v3 — матчинг requestId + мьютекс)
 // ============================================================
 
-#include "espnow_receiver.h"
-#include "espnow_protocol.h"
-#include "transmitter_data.h"
+#include "drivers/espnow_receiver.h"
+#include "drivers/espnow_protocol.h"
+#include "modules/transmitter_data.h"
 #include <esp_now.h>
 #include <WiFi.h>
 

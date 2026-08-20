@@ -7,8 +7,8 @@
  * 
  */
 
-#include "measurements.h"
-#include "websocket_handlers.h"
+#include "modules/measurements.h"
+#include "modules/websocket_handlers.h"
 
 #include <Arduino.h>
 

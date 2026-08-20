@@ -2,9 +2,9 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-#include "transmitter_config.h"
-#include "battery/battery.h"
-#include "espnow_transmitter.h"
+#include "utils/transmitter_config.h"
+#include "drivers/battery/battery.h"
+#include "drivers/espnow_transmitter.h"
 
 
 void setup() {

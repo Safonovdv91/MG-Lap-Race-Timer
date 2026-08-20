@@ -1,14 +1,14 @@
 #include <ArduinoJson.h>
 
-#include "websocket_handlers.h"
+#include "modules/websocket_handlers.h"
 #include "core/measurement_core.h"
-#include "config.h"
-#include "web_handlers.h"
-#include "web_content.h"
-#include "battery/battery.h"
+#include "utils/config.h"
+#include "modules/web_handlers.h"
+#include "modules/web_content.h"
+#include "drivers/battery/battery.h"
 
 #ifdef RECEIVER_MODE
-#include "transmitter_data.h"
+#include "modules/transmitter_data.h"
 #endif
 
 // Внешняя переменная из measurement_core.cpp

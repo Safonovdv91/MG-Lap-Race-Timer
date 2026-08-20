@@ -2,7 +2,12 @@
 #ifndef RECEIVER_CONFIG_H
 #define RECEIVER_CONFIG_H
 
+// Для тестов: если определено UNIT_TEST, используем моки вместо Arduino.h
+#ifdef UNIT_TEST
+#include "fixtures/mocks/arduino_mocks.h"
+#else
 #include <Arduino.h>
+#endif
 
 // Пины для ИК приемников
 #define SENSOR_PIN 13

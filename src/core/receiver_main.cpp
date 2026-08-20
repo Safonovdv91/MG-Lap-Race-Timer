@@ -5,14 +5,14 @@
 #include <SPIFFS.h>
 #include <DNSServer.h>
 
-#include "receiver_config.h"
-#include "web_handlers.h"
-#include "websocket_handlers.h"
-#include "measurements.h"
-#include "battery/battery.h"
-#include "espnow_receiver.h"
-#include "espnow_broadcast.h"
-#include "transmitter_data.h"
+#include "utils/receiver_config.h"
+#include "modules/web_handlers.h"
+#include "modules/websocket_handlers.h"
+#include "modules/measurements.h"
+#include "drivers/battery/battery.h"
+#include "drivers/espnow_receiver.h"
+#include "drivers/espnow_broadcast.h"
+#include "modules/transmitter_data.h"
 
 // Объявление функций
 void updateOperationLed();
@@ -38,7 +38,7 @@ void setup() {
   // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
   // При пересечении луча на пинах будет HIGH (нет сигнала)
   // Поэтому используем прерывание по RISING (по положительному фронту)
-  attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), handleSensor, RISING);
+  attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), handleSensor, FALLING);
 
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS Mount Failed. Formatting...");
@@ -117,10 +117,10 @@ void loop() {
     handleStatusLED();
 
     // Определение заряда батареи
-    readBattery();
+    // readBattery();
     
     // Запрос статуса заряда у передатчика.
-    handleTxReadBattery();
+    // handleTxReadBattery();
 
     // Broadcast данных
     espnow_broadcast_loop();

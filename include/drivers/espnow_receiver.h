@@ -1,5 +1,11 @@
 #pragma once
+
+// Для тестов: если определено UNIT_TEST, используем моки вместо Arduino.h
+#ifdef UNIT_TEST
+#include "fixtures/mocks/arduino_mocks.h"
+#else
 #include <Arduino.h>
+#endif
 
 // Инициализация ESP-NOW. Вызвать после WiFi.softAP(...)
 void espnow_init();

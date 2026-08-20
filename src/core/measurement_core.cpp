@@ -1,19 +1,24 @@
 /**
  * measurement_core.cpp
- * 
+ *
  * Ядро логики измерений — без побочных эффектов (Serial, WebSocket, LED).
  * Содержит только FSM, обработку датчиков и управление состоянием таймера.
- * 
+ *
  * P0.4: Single Responsibility Principle — только бизнес-логика
  */
 
+// Для тестов: если определено UNIT_TEST, используем моки вместо Arduino.h
+#ifdef UNIT_TEST
+#include "fixtures/mocks/arduino_mocks.h"
+#else
 #include <Arduino.h>
-#include "core/measurement_core.h"
-#include "config.h"
-#include "receiver_config.h"
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#endif
+
+#include "core/measurement_core.h"
+#include "utils/config.h"
+#include "utils/receiver_config.h"
 
 // Критическая секция для защиты общих данных
 static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;

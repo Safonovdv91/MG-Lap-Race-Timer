@@ -3,8 +3,8 @@
 //  Стриминг RaceStatePacket в broadcast, 2 раза/сек.
 //  Потери пакетов допустимы — fire and forget, без подтверждений.
 // ============================================================
-#include "espnow_broadcast.h"
-#include "espnow_protocol.h"
+#include "drivers/espnow_broadcast.h"
+#include "drivers/espnow_protocol.h"
 #include "core/measurement_core.h"
 #include <esp_now.h>
 #include <WiFi.h>

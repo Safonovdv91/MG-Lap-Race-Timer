@@ -5,14 +5,14 @@
 #include <FS.h>
 #include <SPIFFS.h>
 
-#include "web_handlers.h"
-#include "config.h"
+#include "modules/web_handlers.h"
+#include "utils/config.h"
 #include "core/measurement_core.h"
-#include "web_content.h"
-#include "battery/battery.h"
+#include "modules/web_content.h"
+#include "drivers/battery/battery.h"
 
 #ifdef RECEIVER_MODE
-#include "transmitter_data.h"  // ← теперь всё живёт здесь
+#include "modules/transmitter_data.h"  // ← теперь всё живёт здесь
 #endif
 
 WebServer server(80);
