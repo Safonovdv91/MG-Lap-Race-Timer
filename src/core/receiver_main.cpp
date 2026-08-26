@@ -170,7 +170,7 @@ void updateOperationLed() {
             } else {
                 // After the first second, keep the LED solid ON to indicate the timer is running.
                 if (!ledState) {
-                    digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
+                    digitalWrite(OPERATION_MODE_LED_PIN, LOW);
                     ledState = true;
                 }
             }
