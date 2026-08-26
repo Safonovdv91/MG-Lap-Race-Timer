@@ -77,7 +77,11 @@ void espnow_broadcast_loop() {
         default:             pkt.timerStatus = RACE_STATUS_READY;   break;
     }
 
-    pkt.raceTime = getCurrentRaceTimeSafe() / 1000000.0f;
+    if (getMeasurementInProgressSafe()) {
+        pkt.raceTime = getCurrentRaceTimeSafe() / 1000000.0f;
+    } else {
+        pkt.raceTime = getCurrentValueSafe();
+    }
     esp_now_send(s_broadcastMac, (uint8_t *)&pkt, sizeof(pkt));
     // Ошибки не логируем — стриминг, потери допустимы
 }
