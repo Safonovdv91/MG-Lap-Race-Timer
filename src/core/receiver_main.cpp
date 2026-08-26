@@ -117,10 +117,10 @@ void loop() {
     handleStatusLED();
 
     // Определение заряда батареи
-    // readBattery();
+    readBattery();
     
     // Запрос статуса заряда у передатчика.
-    // handleTxReadBattery();
+    handleTxReadBattery();
 
     // Broadcast данных
     espnow_broadcast_loop();
