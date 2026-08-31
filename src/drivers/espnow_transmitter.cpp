@@ -92,6 +92,10 @@ static void onDataSent(const uint8_t *mac_addr,
 static void onDataRecv(const uint8_t *mac_addr,
                        const uint8_t *data, int len) {
     if (len < 1) return;
+    // Вывод данных мас-адресса откуда полученны данные
+    Serial.printf("[ESP-NOW] Получено от MAC: %02X:%02X:%02X:%02X:%02X:%02X | ", 
+                  mac_addr[0], mac_addr[1], mac_addr[2], 
+                  mac_addr[3], mac_addr[4], mac_addr[5]);
 
     PacketType type = (PacketType)data[0];
 
@@ -100,19 +104,38 @@ static void onDataRecv(const uint8_t *mac_addr,
             if (len < (int)sizeof(BatteryRequestPacket)) return;
             const BatteryRequestPacket *req =
                 (const BatteryRequestPacket *)data;
-            Serial.printf("[ESP-NOW] Запрос батареи (id=%d) — читаем в loop()\n",
+            Serial.printf("Запрос батареи (id=%d) — читаем в loop()\n",
                           req->requestId);
             // Только флаг — ADC НЕ читаем здесь!
             s_pendingReqId = req->requestId;
             s_replyPending = true;
             break;
         }
+
+        case PACKET_RACE_STATE: {
+            // 1. Проверка длины 
+            if (len < (int)sizeof(RaceStatePacket)) {
+                Serial.println("Ошибка: пакет RaceState слишком короткий!");
+                break;
+            }
+
+            // 2. "Распаковка" сырых байтов в структуру 
+            const RaceStatePacket *race = (const RaceStatePacket *)data;
+            Serial.printf("Гонка: Статус=%d, Режим=%d, Время=%.2f сек\n", 
+                          race->timerStatus, 
+                          race->mode, 
+                          race->raceTime);
+            break;
+        }
+
         case PACKET_RELAY_DATA:
             // Broadcast пакет для device3 — игнорируем
             break;
 
+
+
         default:
-            Serial.printf("[ESP-NOW] Неизвестный тип: 0x%02X\n", type);
+            Serial.printf("Неизвестный тип: 0x%02X\n", type);
             break;
     }
 }
