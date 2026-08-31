@@ -50,7 +50,7 @@ void setup() {
     WiFi.mode(WIFI_AP_STA);         
     // Используем сохранённые настройки или константы по умолчанию
     Serial.printf("[WiFi] Создаём AP: SSID=%s, Password=%s\n", ssid, password);
-    WiFi.softAP(ssid, password);
+    WiFi.softAP(ssid, password, 6);
   
     Serial.print("Receiver MAC:");
     Serial.println(WiFi.softAPmacAddress());
