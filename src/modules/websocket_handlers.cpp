@@ -49,7 +49,11 @@ void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t leng
 void ws_init() {
   webSocket.begin();
   webSocket.onEvent(onWebSocketEvent);
+  // Пингуем клиентов каждые 5 секунд, ждем ответа 5 секунд, 
+  // разрываем соединение после 2 пропущенных ответов (итого ~15 секунд до "отвала")
   Serial.println("WebSocket server started at port 81");
+  webSocket.enableHeartbeat(5000, 5000, 2);
+
 }
 
 void ws_loop() {
@@ -106,5 +110,22 @@ void ws_broadcast_data() {
 
   char buffer[1024];
   size_t len = serializeJson(ws_doc, buffer);
-  webSocket.broadcastTXT(buffer, len);
+
+  // БЕЗОПАСНЫЙ ЦИКЛ С ДЕТЕКТОРОМ БЛОКИРОВКИ
+  for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++) {
+      if (webSocket.clientIsConnected(i)) {
+          unsigned long start = micros(); // Засекаем время до отправки
+          
+          bool success = webSocket.sendTXT(i, buffer, len);
+          
+          unsigned long elapsed = micros() - start; // Сколько времени заняла отправка
+
+          // Если отправка заняла больше 50 000 мкс (50 мс) или вернула ошибку,
+          // значит сокет "мертв" и блокирует процессор. Рвем его немедленно!
+          if (elapsed > 50000 || !success) {
+              Serial.printf("[WS] Клиент %d не отвечает (блокировка %lu мкс). Принудительное отключение.\n", i, elapsed);
+              webSocket.disconnect(i); 
+          }
+      }
+  }
 }
