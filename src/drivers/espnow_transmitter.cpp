@@ -67,14 +67,16 @@ void espnow_loop() {
     resp.batteryVoltage = getBatteryVoltage();
     resp.reserved       = 0;
 
-    Serial.printf("[ESP-NOW] Отправка батареи: %d%% (%.2fV)\n",
-                  resp.batteryLevel, resp.batteryVoltage);
-
     uint8_t receiverMac[] = MAC_RECEIVER;
+    Serial.printf("[ESP-NOW] ↑ MAC: %02X:%02X:%02X:%02X:%02X:%02X | ", 
+                  receiverMac[0], receiverMac[1], receiverMac[2], 
+                  receiverMac[3], receiverMac[4], receiverMac[5]);
+    Serial.printf("Заряд аккумулятора: %d%% (%.2fV)\n",
+                  resp.batteryLevel, resp.batteryVoltage);
     esp_err_t result = esp_now_send(receiverMac,
                                     (uint8_t *)&resp, sizeof(resp));
     if (result != ESP_OK) {
-        Serial.printf("[ESP-NOW] Ошибка отправки ответа: %d\n", result);
+        Serial.printf("x Ошибка отправки ответа: %d\n", result);
     }
 }
 
@@ -84,7 +86,7 @@ void espnow_loop() {
 
 static void onDataSent(const uint8_t *mac_addr,
                        esp_now_send_status_t status) {
-    Serial.printf("[ESP-NOW] Доставка: %s\n",
+    Serial.printf("[ESP-NOW] ↑ Доставка: %s\n",
                   status == ESP_NOW_SEND_SUCCESS ? "OK" : "FAIL");
 }
 
@@ -93,7 +95,7 @@ static void onDataRecv(const uint8_t *mac_addr,
                        const uint8_t *data, int len) {
     if (len < 1) return;
     // Вывод данных мас-адресса откуда полученны данные
-    Serial.printf("[ESP-NOW] Получено от MAC: %02X:%02X:%02X:%02X:%02X:%02X | ", 
+    Serial.printf("[ESP-NOW] ↓ MAC: %02X:%02X:%02X:%02X:%02X:%02X | ", 
                   mac_addr[0], mac_addr[1], mac_addr[2], 
                   mac_addr[3], mac_addr[4], mac_addr[5]);
 
