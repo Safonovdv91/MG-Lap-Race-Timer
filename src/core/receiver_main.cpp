@@ -4,6 +4,8 @@
 #include <WebServer.h>
 #include <SPIFFS.h>
 #include <DNSServer.h>
+#include <esp_task_wdt.h>
+#include <esp_wifi.h>
 
 #include "utils/receiver_config.h"
 #include "modules/web_handlers.h"
@@ -22,6 +24,13 @@ extern WebServer server;
 
 DNSServer dnsServer;
 
+void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+    // Детектор отключения пользователя, если телефон при отключении
+    // высылает пакет об отключении
+    if (event == ARDUINO_EVENT_WIFI_AP_STADISCONNECTED) {
+        Serial.println("[WiFi] Станция отключилась от AP");
+    }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -46,11 +55,12 @@ void setup() {
 
     // Загрузка сохраненных настроек wifi
     loadWiFiSettings();
-
-    WiFi.mode(WIFI_AP_STA);         
+    WiFi.mode(WIFI_AP);        
+    WiFi.setSleep(false); 
+    
     // Используем сохранённые настройки или константы по умолчанию
     Serial.printf("[WiFi] Создаём AP: SSID=%s, Password=%s\n", ssid, password);
-    WiFi.softAP(ssid, password, 6);
+    WiFi.softAP(ssid, password);
   
     Serial.print("Receiver MAC:");
     Serial.println(WiFi.softAPmacAddress());
@@ -80,11 +90,12 @@ void setup() {
     server.onNotFound([]() {
         server.send(404, "text/plain", "Not found");
     });
-
-    server.begin();
   
     // Инициализация WebSocket
     ws_init();
+    ws_start_task();   // вместо server.begin() отдельного вызова ws_loop в основном loop
+    server.begin();
+    WiFi.onEvent(onWiFiEvent);
 
     // Инициализация определения заряда батареи
     initReadBattery();
@@ -102,10 +113,13 @@ void setup() {
 }
 
 void loop() {
-    ws_loop(); // Обработка WebSocket
+    esp_task_wdt_reset(); 
+    
+    // ws_loop(); // Обработка WebSocket
     server.handleClient();
     dnsServer.processNextRequest(); // Обработка DNS запросов
-    
+
+    yield();
     // Обработка ESP-NOW пакетов от излучателя
     espnow_loop();
 

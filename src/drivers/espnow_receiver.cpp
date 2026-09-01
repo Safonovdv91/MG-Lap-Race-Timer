@@ -39,8 +39,6 @@ static void relayToDevice3(const BatteryResponsePacket *resp);
 // ============================================================
 
 void espnow_init() {
-    WiFi.mode(WIFI_AP_STA); // вызвать ДО WiFi.softAP()
-
     if (esp_now_init() != ESP_OK) {
         Serial.println("[ESP-NOW] Ошибка инициализации!");
         return;

@@ -6,5 +6,6 @@
 void ws_init();
 void ws_loop();
 void ws_broadcast_data();
+void ws_start_task();
 
 #endif

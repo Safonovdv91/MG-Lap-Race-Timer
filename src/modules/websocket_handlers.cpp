@@ -20,22 +20,32 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 // Используем 1200 байт для запаса
 StaticJsonDocument<1200> ws_doc;
 
+TaskHandle_t wsTaskHandle = NULL;
+volatile bool g_sendInitialState = false;
+
+static bool clientQuarantined[WEBSOCKETS_SERVER_CLIENT_MAX] = {false};
+static unsigned long quarantineUntil[WEBSOCKETS_SERVER_CLIENT_MAX] = {0};
+const unsigned long QUARANTINE_RETRY_MS = 15000; // повторная попытка раз в 15с
+
 void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
       Serial.printf("[%u] Disconnected!\n", num);
       break;
+
     case WStype_CONNECTED: {
-      IPAddress ip = webSocket.remoteIP(num);
-      Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-      // Send current state immediately to new client
-      ws_broadcast_data();
-      break;
+        IPAddress ip = webSocket.remoteIP(num);
+        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        clientQuarantined[num] = false;
+        g_sendInitialState = true;   // просто ставим флаг, ничего не шлём здесь
+        break;
     }
+
     case WStype_TEXT:
       Serial.printf("[%u] get Text: %s\n", num, payload);
       // We can handle incoming messages here if needed in the future
       break;
+      
     case WStype_BIN:
     case WStype_ERROR:
     case WStype_FRAGMENT_TEXT_START:
@@ -49,10 +59,7 @@ void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t leng
 void ws_init() {
   webSocket.begin();
   webSocket.onEvent(onWebSocketEvent);
-  // Пингуем клиентов каждые 5 секунд, ждем ответа 5 секунд, 
-  // разрываем соединение после 2 пропущенных ответов (итого ~15 секунд до "отвала")
   Serial.println("WebSocket server started at port 81");
-  webSocket.enableHeartbeat(5000, 5000, 2);
 
 }
 
@@ -113,19 +120,57 @@ void ws_broadcast_data() {
 
   // БЕЗОПАСНЫЙ ЦИКЛ С ДЕТЕКТОРОМ БЛОКИРОВКИ
   for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++) {
-      if (webSocket.clientIsConnected(i)) {
-          unsigned long start = micros(); // Засекаем время до отправки
-          
-          bool success = webSocket.sendTXT(i, buffer, len);
-          
-          unsigned long elapsed = micros() - start; // Сколько времени заняла отправка
+      if (!webSocket.clientIsConnected(i)) continue;
 
-          // Если отправка заняла больше 50 000 мкс (50 мс) или вернула ошибку,
-          // значит сокет "мертв" и блокирует процессор. Рвем его немедленно!
-          if (elapsed > 50000 || !success) {
-              Serial.printf("[WS] Клиент %d не отвечает (блокировка %lu мкс). Принудительное отключение.\n", i, elapsed);
-              webSocket.disconnect(i); 
-          }
+      // клиент в карантине и время ещё не вышло — вообще не трогаем сокет
+      if (clientQuarantined[i] && millis() < quarantineUntil[i]) {
+          continue;
+      }
+
+      unsigned long start = micros();
+      bool success = webSocket.sendTXT(i, buffer, len);
+      unsigned long elapsed = micros() - start;
+
+      if (elapsed > 100000 || !success) {
+          Serial.printf("[WS] Клиент %d недоступен (задержка %lu мкс). Карантин на %lus.\n",
+                        i, elapsed, QUARANTINE_RETRY_MS / 1000);
+          clientQuarantined[i] = true;
+          quarantineUntil[i] = millis() + QUARANTINE_RETRY_MS;
+          webSocket.disconnect(i);
+          yield();
+      } else {
+          clientQuarantined[i] = false; // успешно отправили — снимаем карантин
       }
   }
+}
+
+void wsTask(void* pvParameters) {
+    const TickType_t broadcastInterval = pdMS_TO_TICKS(90);
+    TickType_t lastBroadcast = xTaskGetTickCount();
+
+    for (;;) {
+        ws_loop(); // тут внутри webSocket.loop(), onEvent может сработать и просто выставить флаг
+
+        bool doBroadcast = (xTaskGetTickCount() - lastBroadcast >= broadcastInterval);
+
+        if (doBroadcast || g_sendInitialState) {
+            g_sendInitialState = false;
+            ws_broadcast_data(); // теперь вызывается СНАРУЖИ webSocket.loop(), не реентрантно
+            lastBroadcast = xTaskGetTickCount();
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
+}
+
+void ws_start_task() {
+    xTaskCreatePinnedToCore(
+        wsTask,
+        "wsTask",
+        8192,          // стек побольше — JsonDocument+буфер на 1024 байта внутри
+        NULL,
+        1,             // приоритет
+        &wsTaskHandle,
+        0              // core 0 — Arduino loop() обычно живёт на core 1
+    );
 }
