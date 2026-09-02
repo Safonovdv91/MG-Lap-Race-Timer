@@ -10,6 +10,7 @@
 #define RED_LED_PIN 32
 #define GREEN_LED_PIN 33    
 #define BLUE_LED_PIN 25 
+
 const unsigned long BLINK_ON_TIME  = 200;   // мс, горит
 const unsigned long BLINK_OFF_TIME = 3000;  // мс, пауза
 
