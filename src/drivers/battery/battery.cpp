@@ -7,6 +7,8 @@
 
 #include "utils/config.h"
 #include "drivers/battery/battery.h"
+#include <utils/transmitter_config.h>
+
 #ifndef UNIT_TEST
 #include "drivers/espnow_receiver.h"
 #endif
@@ -19,6 +21,11 @@ static unsigned long lastSampleTime = 0;
 // EMA
 static float emaVoltage = 0.0f;
 const float EMA_ALPHA = 0.1f;   // 0.05 плавнее, 0.1 оптимально, 0.2 быстрее
+
+// ===== Настройки для реализации моргания =====
+
+unsigned long lastBlinkChange = 0;
+bool ledIsOn = false;
 
 // ===== Инициализация аккумуляторометра =====
 void initReadBattery(){
@@ -76,6 +83,63 @@ void readBattery() {
     }
 }
 
+// ===== Обновление индикации батареи =====
+void updateBatteryLed() {
+    unsigned long now = millis();
+
+    enum BlinkColor { NONE, RED, YELLOW, BLUE };
+    BlinkColor color;
+
+    if (batteryPercentage < 10) {
+        color = RED;
+    } else if (batteryPercentage < 20) {
+        color = YELLOW;
+    } else if (batteryPercentage < 30) {
+        color = BLUE;
+    } else {
+        color = NONE;
+    }
+
+    if (color == NONE) {
+        digitalWrite(RED_LED_PIN, LOW);
+        digitalWrite(GREEN_LED_PIN, LOW);
+        digitalWrite(BLUE_LED_PIN, LOW);
+        ledIsOn = false;
+        lastBlinkChange = now;
+        return;
+    }
+
+    unsigned long elapsed = now - lastBlinkChange;
+
+    if (ledIsOn) {
+        if (elapsed >= BLINK_ON_TIME) {
+            digitalWrite(RED_LED_PIN, LOW);
+            digitalWrite(GREEN_LED_PIN, LOW);
+            digitalWrite(BLUE_LED_PIN, LOW);
+            ledIsOn = false;
+            lastBlinkChange = now;
+        }
+    } else {
+        if (elapsed >= BLINK_OFF_TIME) {
+            switch (color) {
+                case RED:
+                    digitalWrite(RED_LED_PIN, HIGH);
+                    break;
+                case YELLOW:
+                    digitalWrite(RED_LED_PIN, HIGH);
+                    digitalWrite(GREEN_LED_PIN, HIGH);
+                    break;
+                case BLUE:
+                    digitalWrite(BLUE_LED_PIN, HIGH);
+                    break;
+                default:
+                    break;
+            }
+            ledIsOn = true;
+            lastBlinkChange = now;
+        }
+    }
+}
 
 // ===== Геттеры =====
 float getBatteryVoltage() {
