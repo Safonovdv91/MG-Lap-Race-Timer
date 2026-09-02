@@ -27,6 +27,11 @@ const float EMA_ALPHA = 0.1f;   // 0.05 плавнее, 0.1 оптимально
 unsigned long lastBlinkChange = 0;
 bool ledIsOn = false;
 
+// ===== Настройки heartbeat =====
+
+unsigned long lastHeartbeatChange = 0;
+bool heartbeatIsOn = false;
+
 // ===== Инициализация аккумуляторометра =====
 void initReadBattery(){
     Serial.printf("Инициализация определения заряда батареи [Battery] [PIN]:= %d ",BATTERY_PIN);
@@ -83,11 +88,11 @@ void readBattery() {
     }
 }
 
-// ===== Обновление индикации батареи =====
+// ===== Обновление индикации батареи + heartbeat (вызывать каждый loop()) =====
 void updateBatteryLed() {
     unsigned long now = millis();
 
-    enum BlinkColor { NONE, RED, YELLOW, BLUE };
+    enum BlinkColor { NONE, RED, YELLOW, BLUE,VIOLET, ORANGE };
     BlinkColor color;
 
     if (batteryPercentage < 10) {
@@ -95,27 +100,51 @@ void updateBatteryLed() {
     } else if (batteryPercentage < 20) {
         color = YELLOW;
     } else if (batteryPercentage < 30) {
-        color = BLUE;
+        color = VIOLET;
+    } else if (batteryPercentage < 50) {
+        color = ORANGE;
     } else {
         color = NONE;
     }
 
     if (color == NONE) {
-        digitalWrite(RED_LED_PIN, LOW);
-        digitalWrite(GREEN_LED_PIN, LOW);
-        digitalWrite(BLUE_LED_PIN, LOW);
+        // ===== Батарея в норме — гасим RED/GREEN, синий отдаём под heartbeat =====
+        analogWrite(RED_LED_PIN, 0);
+        analogWrite(GREEN_LED_PIN, 0);
+
+        // сбрасываем состояние батарейного моргания, чтобы при разрядке цикл начинался заново
         ledIsOn = false;
         lastBlinkChange = now;
+
+        // --- Heartbeat на BLUE_LED_PIN ---
+        unsigned long hbElapsed = now - lastHeartbeatChange;
+        if (heartbeatIsOn) {
+            if (hbElapsed >= HEARTBEAT_ON_TIME) {
+                analogWrite(BLUE_LED_PIN, LOW);
+                heartbeatIsOn = false;
+                lastHeartbeatChange = now;
+            }
+        } else {
+            if (hbElapsed >= HEARTBEAT_OFF_TIME) {
+                analogWrite(BLUE_LED_PIN, 255);
+                heartbeatIsOn = true;
+                lastHeartbeatChange = now;
+            }
+        }
         return;
     }
+
+    // ===== Батарея разряжена — приоритет у предупреждения, heartbeat отключаем =====
+    heartbeatIsOn = false;
+    lastHeartbeatChange = now; // чтобы heartbeat начинался заново после возврата в норму
 
     unsigned long elapsed = now - lastBlinkChange;
 
     if (ledIsOn) {
         if (elapsed >= BLINK_ON_TIME) {
-            digitalWrite(RED_LED_PIN, LOW);
-            digitalWrite(GREEN_LED_PIN, LOW);
-            digitalWrite(BLUE_LED_PIN, LOW);
+            analogWrite(RED_LED_PIN, 0);
+            analogWrite(GREEN_LED_PIN, 0);
+            analogWrite(BLUE_LED_PIN, 0);
             ledIsOn = false;
             lastBlinkChange = now;
         }
@@ -123,14 +152,19 @@ void updateBatteryLed() {
         if (elapsed >= BLINK_OFF_TIME) {
             switch (color) {
                 case RED:
-                    digitalWrite(RED_LED_PIN, HIGH);
+                    analogWrite(RED_LED_PIN, 255);
                     break;
                 case YELLOW:
-                    digitalWrite(RED_LED_PIN, HIGH);
-                    digitalWrite(GREEN_LED_PIN, HIGH);
+                    analogWrite(RED_LED_PIN, 255);
+                    analogWrite(GREEN_LED_PIN, 255);
                     break;
-                case BLUE:
-                    digitalWrite(BLUE_LED_PIN, HIGH);
+                case VIOLET:
+                    analogWrite(BLUE_LED_PIN, 255);
+                    analogWrite(RED_LED_PIN, 255);
+                    break;
+                case ORANGE:
+                      analogWrite(RED_LED_PIN, 255);
+                    analogWrite(GREEN_LED_PIN, 140);
                     break;
                 default:
                     break;
@@ -140,7 +174,6 @@ void updateBatteryLed() {
         }
     }
 }
-
 // ===== Геттеры =====
 float getBatteryVoltage() {
     return batteryVoltage;

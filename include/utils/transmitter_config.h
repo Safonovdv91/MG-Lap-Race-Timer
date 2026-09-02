@@ -13,6 +13,8 @@
 const unsigned long BLINK_ON_TIME  = 200;   // мс, горит
 const unsigned long BLINK_OFF_TIME = 3000;  // мс, пауза
 
+const unsigned long HEARTBEAT_ON_TIME  = 100;   // мс, горит
+const unsigned long HEARTBEAT_OFF_TIME = 3000;  // мс, пауза
 
 // Частота ШИМ для модуляции ИК сигнала (38 кГц)
 #define PWM_CHANNEL_1 0  // Канал ШИМ для первого передатчика
