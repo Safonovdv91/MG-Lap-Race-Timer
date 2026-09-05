@@ -8,12 +8,15 @@
 </head>
 <body>
     <div class="header">
-        <div class="battery-status">
-            {{BATTERY_STATUS}}
+        <div class="battery-status" id="battery-status">
+            <!-- Обновляется через WebSocket -->
+            <span class="battery-info rx">RX: --%</span>
+            <span class="battery-info tx">TX: --%</span>
         </div>
         <div class="mode-selector-container">
             <select id="mode-select" onchange="changeMode(this.value)">
-                {{MODE_OPTIONS}}
+                <option value="0">Lap Timer</option>
+                <option value="1">Race Timer</option>
             </select>
         </div>
     </div>

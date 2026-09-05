@@ -1,0 +1,34 @@
+// config.h
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// Для тестов: если определено UNIT_TEST, используем моки вместо Preferences.h
+#ifdef UNIT_TEST
+// Preferences уже определён в arduino_mocks.h
+#else
+#include <Preferences.h>
+#endif
+
+extern Preferences preferences;
+
+// Объявления без инициализации
+extern char ssid[32];
+extern char password[64];
+extern const int serverPort;
+
+
+// Объявления функций
+void loadWiFiSettings();
+void saveWiFiSettings();
+
+// Настройки пинов
+
+// Безопасные GPIO для датчиков (рекомендуемые):
+//     GPIO14, GPIO27, GPIO26, GPIO25, GPIO33, GPIO32, GPIO15, GPIO2, GPIO4, GPIO5, GPIO18, GPIO19, GPIO21, GPIO22, GPIO23
+//     Эти пины не используются критически при загрузке (кроме GPIO15, но он менее проблематичен).
+// Пины, которых стоит избегать:
+//     GPIO0, GPIO2, GPIO12, GPIO15 — участвуют в определении режима загрузки.
+//     GPIO6-11 — подключены к внутренней flash-памяти (их использование может "убить" плату).
+//     GPIO34-39 — только входные пины (без подтяжки), но безопасны для датчиков.
+
+#endif
