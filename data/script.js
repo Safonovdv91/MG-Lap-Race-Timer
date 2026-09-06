@@ -1,154 +1,175 @@
-let currentMode = 0;
-let historyData = [];
-let raceTimerInterval = null;
-let lastRaceTime = 0;
-let raceStartTime = 0;
-let isRaceActive = false;
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Screen Wake Lock ---
+    let wakeLock = null;
 
-function updateBatteryInfo(voltage, percentage) {
-  const batteryInfo = document.getElementById('batteryInfo');
-  
-  let html = `
-    <div style="display: flex; align-items: center; gap: 5px;">
-      <div style="position: relative; width: 24px; height: 12px; border: 1px solid #ccc;">
-        <div style="position: absolute; 
-                    height: 100%; 
-                    width: ${percentage}%; 
-                    background: ${percentage > 20 ? '#4CAF50' : '#F44336'};">
-        </div>
-      </div>
-      <div style="font-size: 12px;">
-        ${voltage}V (${percentage}%)
-      </div>
-    </div>
-  `;
-  
-  batteryInfo.innerHTML = html;
-}
-
-function updateDisplay() {
-  fetch('api/v1/data')
-    .then(response => response.json())
-    .then(data => {
-      updateSensorStatus(data.sensor1Active, data.sensor2Active);
-      currentMode = data.mode;
-      document.getElementById('modeSelect').value = currentMode;
-      document.getElementById('distanceInput').value = data.distance;
-
-      // Обработка разных режимов
-      const valueDisplay = document.getElementById('valueDisplay');
-      const unitDisplay = document.getElementById('unitDisplay');
-
-      // Подсветка режима измерения
-      if (data.measurementInProgress) { // Добавим этот флаг в JSON
-        valueDisplay.innerHTML = `<span class="active-measurement">${formatTime(data.currentTime)}</span>`;
-      } else {
-        valueDisplay.textContent = currentMode == 0 ? 
-          data.currentValue.toFixed(2) : 
-          formatTime(data.currentValue);
-      }
-      if (currentMode == 0) { // Speedometer
-        valueDisplay.textContent = data.currentValue.toFixed(2);
-        unitDisplay.textContent = 'km/h';
-        historyData = data.speedHistory;
-      } else { // Timer modes
-        unitDisplay.textContent = 'mm:ss.ms';
-        historyData = data.lapHistory;
-      }
-
-      // Обновление таблицы истории
-      const tableBody = document.getElementById('historyBody');
-      tableBody.innerHTML = '';
-
-      for (let i = 0; i < historyData.length; i++) {
-        const record = currentMode == 0 ? data.speedHistory[i] : data.lapHistory[i];
-        if (record && record.value > 0) {
-          const row = document.createElement('tr');
-
-          const indexCell = document.createElement('td');
-          indexCell.textContent = i + 1;
-          row.appendChild(indexCell);
-
-          // Значение
-          const valueCell = document.createElement('td');
-          valueCell.innerHTML = currentMode == 0 ? 
-            `<strong>${record.value.toFixed(2)} km/h</strong>` : 
-            `<strong>${formatTime(record.value)}</strong>`;
-          row.appendChild(valueCell);
-
-          tableBody.appendChild(row);
+    const requestWakeLock = async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Screen Wake Lock is active');
+                
+                wakeLock.addEventListener('release', () => {
+                    console.log('Screen Wake Lock was released');
+                });
+            } catch (err) {
+                console.error(`Wake Lock Error: ${err.name}, ${err.message}`);
+            }
+        } else {
+            console.log('Wake Lock API not supported.');
         }
-      }
-      updateBatteryInfo(data.batteryVoltage, data.batteryPercentage);
+    };
+
+    // Request the lock when the page loads
+    requestWakeLock();
+
+    // Re-acquire the lock when the page becomes visible again
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestWakeLock();
+        }
     });
-}
+    // --- End Screen Wake Lock ---
 
-// Форматирование времени в mm:ss.cc (минуты:секунды.сотые_доли_секунды)
-function formatTime(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  const cs = Math.floor((seconds % 1) * 100); // Сотые доли секунды
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
-}
+    const timerDisplay = document.getElementById('timer-display');
+    const timerSubtitle = document.getElementById('timer-subtitle');
+    const historyBody = document.getElementById('history-body');
+    const statusIndicator = document.getElementById('timer-status');
 
-// Форматирование даты/времени
-function formatDateTime(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString();
-}
+    let gateway = `ws://${window.location.hostname}:81/`;
+    let websocket;
 
-function changeMode() {
-  const mode = document.getElementById('modeSelect').value;
-  fetch('/api/v1/mode?value=' + mode)
-    .then(() => updateDisplay());
-}
+    // --- Local Timer for smooth animation ---
+    let localTimer = {
+        intervalId: null,
+        isTiming: false,
+        startTime: 0,
+        
+        start: function(serverRaceTime) {
+            if (this.isTiming) { // If already timing, just recalibrate
+                this.startTime = Date.now() - (serverRaceTime * 1000);
+                return;
+            }
+            this.isTiming = true;
+            this.startTime = Date.now() - (serverRaceTime * 1000);
+            if (this.intervalId) clearInterval(this.intervalId);
+            this.intervalId = setInterval(() => {
+                const elapsedTime = (Date.now() - this.startTime) / 1000;
+                timerDisplay.textContent = formatTime(elapsedTime);
+            }, 50);
+        },
 
+        stop: function() {
+            if (!this.isTiming) return;
+            this.isTiming = false;
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+            this.startTime = 0;
+        }
+    };
 
-function reset() {
-  fetch('/api/v1/reset')
-    .then(() => updateDisplay());
-}
+    function initWebSocket() {
+        console.log('Trying to open a WebSocket connection...');
+        websocket = new WebSocket(gateway);
+        websocket.onopen    = onOpen;
+        websocket.onclose   = onClose;
+        websocket.onmessage = onMessage;
+    }
 
-function changeDistance(step) {
-  const input = document.getElementById('distanceInput');
-  let value = parseFloat(input.value) + step;
-  
-  // Ограничиваем минимальное значение
-  if (value < 0.1) value = 0.1;
-  
-  input.value = value.toFixed(1);
-  updateDistance(); // Автоматически отправляем новое значение
-}
+    function onOpen(event) {
+        console.log('Connection opened');
+        timerSubtitle.textContent = 'connected';
+        timerSubtitle.className = 'timer-subtitle';
+    }
 
-function updateDistance() {
-  const distance = document.getElementById('distanceInput').value;
-  fetch('/api/v1/distance?value=' + distance)
-    .then(() => {
-      // Обновляем весь дисплей, чтобы получить актуальные данные
-      updateDisplay();
-    });
-}
+    function onClose(event) {
+        console.log('Connection closed');
+        timerSubtitle.textContent = 'connection lost';
+        timerSubtitle.className = 'timer-subtitle status-last-lap'; // Use orange for error
+        statusIndicator.className = '';
+        localTimer.stop();
+        setTimeout(initWebSocket, 2000); // Try to reconnect every 2 seconds
+    }
 
-document.querySelectorAll('.distance-control button').forEach(btn => {
-  btn.addEventListener('touchstart', function(e) {
-    e.preventDefault();
-    this.click();
-  });
+    function onMessage(event) {
+        let data = JSON.parse(event.data);
+
+        const status = data.timer_status || 'ready';
+        statusIndicator.className = 'status-' + status;
+
+        // Update main timer display based on state
+        if (status === 'running') {
+            localTimer.start(data.race_time);
+            timerSubtitle.textContent = 'GO';
+            timerSubtitle.className = 'timer-subtitle status-go';
+        } else { // Covers 'ready' and 'display'
+            localTimer.stop();
+
+            if (data.value > 0) {
+                timerDisplay.textContent = formatTime(data.value);
+            } else {
+                timerDisplay.textContent = "00:00.000";
+            }
+
+            if (status === 'display') {
+                timerSubtitle.textContent = 'last lap';
+                timerSubtitle.className = 'timer-subtitle status-last-lap';
+            } else { // ready
+                timerSubtitle.textContent = 'ready to go';
+                timerSubtitle.className = 'timer-subtitle';
+            }
+        }
+
+        // Update history
+        historyBody.innerHTML = '';
+        if (data.history && data.history.length > 0) {
+            data.history.slice().reverse().forEach((lap, index) => {
+                if (lap.value > 0) {
+                    const row = historyBody.insertRow();
+                    const lapCell = row.insertCell(0);
+                    const timeCell = row.insertCell(1);
+                    lapCell.textContent = data.history.length - index;
+                    timeCell.textContent = formatTime(lap.value);
+                }
+            });
+        }
+
+        // Update battery info
+        const rxBattery = document.querySelector('.battery-info.rx');
+        const txBattery = document.querySelector('.battery-info.tx');
+        if(rxBattery) rxBattery.textContent = `RX: ${data.battery}%`;
+        if(txBattery) txBattery.textContent = `TX: ${data.tx_battery >= 0 ? data.tx_battery + '%' : '---'}`;
+        
+        // Update mode select (если сервер присылает текущий режим)
+        if(data.mode !== undefined) {
+            const modeSelect = document.getElementById('mode-select');
+            if(modeSelect) modeSelect.value = data.mode;
+        }
+    }
+
+    initWebSocket();
 });
 
-// Функцию для обновления статуса датчиков
-function updateSensorStatus(sensor1Active, sensor2Active) {
-  const sensor1Elem = document.getElementById('sensor1Status');
-  const sensor2Elem = document.getElementById('sensor2Status');
-  
-  sensor1Elem.textContent = 'Д1: ' + (sensor1Active ? 'АКТИВЕН' : '---');
-  sensor2Elem.textContent = 'Д2: ' + (sensor2Active ? 'АКТИВЕН' : '---');
-  
-  sensor1Elem.className = sensor1Active ? 'sensor-active' : '';
-  sensor2Elem.className = sensor2Active ? 'sensor-active' : '';
+function formatTime(timeInSeconds) {
+    if (typeof timeInSeconds !== 'number' || isNaN(timeInSeconds) || timeInSeconds < 0) {
+        return "00:00.000";
+    }
+    const date = new Date(timeInSeconds * 1000);
+    const minutes = date.getUTCMinutes();
+    const seconds = date.getUTCSeconds();
+    const milliseconds = date.getUTCMilliseconds();
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
 }
 
+function changeMode(mode) {
+    fetch(`/api/v1/mode?m=${mode}`)
+        .then(() => {
+            location.reload();
+        })
+        .catch(err => console.error('Error changing mode:', err));
+}
 
-// Update every 300ms
-setInterval(updateDisplay, 1000);
-updateDisplay();
+function resetMeasurements() {
+    fetch('/api/v1/reset', { method: 'POST' })
+        .catch(err => console.error('Error resetting:', err));
+    // The UI will update automatically via the broadcast triggered by the reset
+}
