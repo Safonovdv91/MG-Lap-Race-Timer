@@ -15,6 +15,7 @@
 #include "drivers/espnow_receiver.h"
 #include "drivers/espnow_broadcast.h"
 #include "modules/transmitter_data.h"
+#include <utils/led_config.h>
 
 // Объявление функций
 void updateOperationLed();
@@ -40,8 +41,8 @@ void setup() {
   pinMode(SENSOR_PIN, INPUT);
   
   // Настройка пина светодиода режима работы
-  pinMode(OPERATION_MODE_LED_PIN, OUTPUT);
-  pinMode(STATUS_IR_LED_PIN, OUTPUT);
+    // Инициализация LED 
+  initLED();
 
   digitalWrite(STATUS_IR_LED_PIN, LOW);
   // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
@@ -127,8 +128,8 @@ void loop() {
     processMeasurementsWithSideEffects();
     
     // Обновление светодиода режима работы
-    updateOperationLed();
-    handleStatusLED();
+
+
 
     // Определение заряда батареи
     readBattery();
@@ -139,73 +140,12 @@ void loop() {
     // Broadcast данных
     espnow_broadcast_loop();
 
-}
+    // Определение цвета свтодиода
+    updateBatteryLed();
+    updateOperationLed();
+    handleStatusLED();
 
-
-void updateOperationLed() {
-    static unsigned long lastBlinkTime = 0;
-    static bool ledState = false; // false = OFF, true = ON
-    static TimerStatus lastStatus = STATUS_READY;
-
-    TimerStatus currentStatus = getTimerStatus();
-
-    // Reset state machine on status change
-    if (currentStatus != lastStatus) {
-        lastBlinkTime = 0; // Reset blink timer
-        ledState = false; // Default to OFF
-        digitalWrite(OPERATION_MODE_LED_PIN, LOW);
-        lastStatus = currentStatus;
-    }
-
-    unsigned long currentTime = millis();
-
-    switch (currentStatus) {
-        case STATUS_READY:
-            // Normal blink: 0.3s on, 1.7s off
-            if (ledState && (currentTime - lastBlinkTime >= LED_BLINK_DURATION)) {
-                ledState = false;
-                digitalWrite(OPERATION_MODE_LED_PIN, LOW);
-                lastBlinkTime = currentTime;
-            } else if (!ledState && (currentTime - lastBlinkTime >= (unsigned long)LED_BLINK_INTERVAL - LED_BLINK_DURATION)) {
-                ledState = true;
-                digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
-                lastBlinkTime = currentTime;
-            }
-            break;
-
-        case STATUS_RUNNING:
-            // Fast blink for the first second (MIN_LAP_TIME is in microseconds)
-            if (getCurrentRaceTimeSafe() < MIN_LAP_TIME) {
-                if (currentTime - lastBlinkTime >= FAST_BLINK_INTERVAL) {
-                    ledState = !ledState;
-                    digitalWrite(OPERATION_MODE_LED_PIN, ledState ? HIGH : LOW);
-                    lastBlinkTime = currentTime;
-                }
-            } else {
-                // After the first second, keep the LED solid ON to indicate the timer is running.
-                if (!ledState) {
-                    digitalWrite(OPERATION_MODE_LED_PIN, LOW);
-                    ledState = true;
-                }
-            }
-            break;
-
-        case STATUS_DISPLAY:
-        // Rapid blink for MIN_LAP_TIME duration, then solid ON for the rest of TIMER_COOLDOWN_PERIOD
-        if (currentTime - getDisplayStartTimeSafe() < (MIN_LAP_TIME / 1000)) { // MIN_LAP_TIME is in microseconds, convert to milliseconds 
-          if (currentTime - lastBlinkTime >= FAST_BLINK_INTERVAL) {
-            ledState = !ledState;
-            digitalWrite(OPERATION_MODE_LED_PIN, ledState ? HIGH : LOW);
-                lastBlinkTime = currentTime;
-            }
-          } else { 
-            // After MIN_LAP_TIME duration, keep the LED solid ON.                                                                                │
-            if (!ledState) {
-            digitalWrite(OPERATION_MODE_LED_PIN, HIGH);
-            ledState = true;
-          }
-        }
-        break;
-    }
+    applyLedOutputs();     // световая индикация в зависимости от сценария
 
 }
+

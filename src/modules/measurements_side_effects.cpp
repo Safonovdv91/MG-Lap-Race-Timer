@@ -12,39 +12,6 @@
 
 #include <Arduino.h>
 
-// ============================================================================
-// LED Indicators
-// ============================================================================
-
-/**
- * Управление статусным светодиодом датчика.
- * Показывает текущее состояние луча:
- * - HIGH (включен)   : луч есть (нормальное состояние)
- * - LOW (выключен)   : луч прерван
- * - Мигание (1 Гц)   : луч потерян > 10 секунд (ошибка)
- */
-void handleStatusLED() {
-    static unsigned long lastBlinkTime = 0;
-    static bool blinkState = false;
-
-    // Проверка на "луч потерян"
-    if (isBeamLost()) {
-        // Мигание 1 Гц (1000 мс)
-        unsigned long nowMs = millis();
-        if (nowMs - lastBlinkTime >= 500) {
-            blinkState = !blinkState;
-            digitalWrite(STATUS_IR_LED_PIN, blinkState ? HIGH : LOW);
-            lastBlinkTime = nowMs;
-        }
-        return;
-    }
-
-    // Нормальный режим: показываем текущее состояние датчика
-    int sensorState = digitalRead(SENSOR_PIN);
-    // sensorState == HIGH → луч прерван → LED выключен
-    // sensorState == LOW → луч есть → LED включен
-    digitalWrite(STATUS_IR_LED_PIN, sensorState == LOW ? HIGH : LOW);
-}
 
 // ============================================================================
 // WebSocket Broadcast
