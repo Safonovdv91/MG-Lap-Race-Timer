@@ -15,6 +15,7 @@
 #include "drivers/espnow_receiver.h"
 #include "drivers/espnow_broadcast.h"
 #include "modules/transmitter_data.h"
+#include "drivers/power_button.h"
 #include <utils/led_config.h>
 
 // Объявление функций
@@ -33,26 +34,34 @@ void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
     }
 }
 
+// Вызывается модулем power_button прямо перед уходом в deep sleep -
+// гасим WiFi/радио, чтобы не жрать лишнее и корректно отключиться
+void onBeforeSleep() {
+    WiFi.softAPdisconnect(true);
+    WiFi.mode(WIFI_OFF);
+}
+
 void setup() {
   Serial.begin(115200);
   
-  // Настройка пинов датчиков как входы для ИК приемников
+    // Настройка пинов датчиков как входы для ИК приемников
+    powerButton_init();                    // GPIO0, удержание 2с -> сон
+
+    pinMode(SENSOR_PIN, INPUT);
   
-  pinMode(SENSOR_PIN, INPUT);
-  
-  // Настройка пина светодиода режима работы
+    // Настройка пина светодиода режима работы
     // Инициализация LED 
-  initLED();
+    initLED();
 
-  digitalWrite(STATUS_IR_LED_PIN, LOW);
-  // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
-  // При пересечении луча на пинах будет HIGH (нет сигнала)
-  // Поэтому используем прерывание по RISING (по положительному фронту)
-  attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), handleSensor, FALLING);
+    digitalWrite(STATUS_IR_LED_PIN, LOW);
+    // При нормальной работе ИК луча на пинах будет LOW (есть сигнал)
+    // При пересечении луча на пинах будет HIGH (нет сигнала)
+    // Поэтому используем прерывание по RISING (по положительному фронту)
+    attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), handleSensor, FALLING);
 
-  if (!SPIFFS.begin(true)) {
-    Serial.println("SPIFFS Mount Failed. Formatting...");
-  }
+    if (!SPIFFS.begin(true)) {
+        Serial.println("SPIFFS Mount Failed. Formatting...");
+    }
 
     // Загрузка сохраненных настроек wifi
     loadWiFiSettings();
@@ -114,6 +123,8 @@ void setup() {
 }
 
 void loop() {
+    powerButton_loop();
+
     esp_task_wdt_reset(); 
     
     // ws_loop(); // Обработка WebSocket
@@ -126,10 +137,6 @@ void loop() {
 
     // Обновление состояния измерений (core + side effects)
     processMeasurementsWithSideEffects();
-    
-    // Обновление светодиода режима работы
-
-
 
     // Определение заряда батареи
     readBattery();
