@@ -4,9 +4,12 @@
 // Инициализация ИК передатчиков
 void initIRTransmitters() {
     // Настройка пинов как выходы
-  ledcSetup(0,IR_FREQ,8);
-  ledcAttachPin(IR_TX1_PIN,0);
-  ledcWrite(0,127); //duty 50% 255 - 100%
+    Serial.print("Инициализация IR");
+    // ledcSetup(0,IR_FREQ,8);
+    // ledcAttachPin(IR_TX1_PIN,0);
+    // ledcWrite(0,127); //duty 50% 255 - 100%
+    pinMode(IR_TX1_PIN,OUTPUT);
+    digitalWrite(IR_TX1_PIN, HIGH);
 }
 
 void initLEDTransmitters(){
@@ -29,22 +32,4 @@ void initLEDTransmitters(){
 
     digitalWrite(GREEN_LED_PIN,LOW);
     Serial.println("Ok ");
-}
-
-void ledOutBattery(int batteryPercentage){
-    // функция отображения заряда батареи на LED индикаторах
-        if (batteryPercentage < 10) {
-            digitalWrite(RED_LED_PIN, HIGH);
-            Serial.println("Battery: < 10%");
-        }
-        else if (batteryPercentage >= 10 and batteryPercentage <= 20)
-        {
-            digitalWrite(RED_LED_PIN, HIGH);
-            digitalWrite(GREEN_LED_PIN, HIGH);
-            Serial.println("Battery: 10-20%");
-        }
-        else {
-            digitalWrite(RED_LED_PIN, LOW);
-            digitalWrite(GREEN_LED_PIN, LOW);
-        }
 }
